@@ -1,0 +1,7 @@
+node_modules/
+.gbrain-local/
+*.pglite
+*.pglite.bak
+live-run/
+.eval-local/
+__pycache__/

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dual-Brain Memory Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot {
+      width: 12px; height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    svg { width: 100%; min-width: 1100px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Dual-Brain Memory Architecture</h1>
+      </div>
+      <p class="subtitle">session capture &rarr; signal extraction &rarr; paid review &rarr; graph storage &rarr; briefing retrieval &mdash; mohamedswe/dual-brain-memory</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1180 920">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-paid" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24" />
+          </marker>
+          <marker id="arrowhead-data" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- ================= LANE LABELS ================= -->
+        <text x="20" y="50" fill="#64748b" font-size="9" font-weight="600">CAPTURE LANE (deterministic, free)</text>
+        <text x="20" y="345" fill="#fbbf24" font-size="9" font-weight="600">REVIEW LANE (paid, budget-gated)</text>
+        <text x="20" y="580" fill="#a78bfa" font-size="9" font-weight="600">STORAGE LANE (G-brain PGLite)</text>
+        <text x="20" y="790" fill="#22d3ee" font-size="9" font-weight="600">RETRIEVAL LANE</text>
+
+        <!-- ============ STAGE 1: SOURCE ============ -->
+        <rect x="30" y="70" width="150" height="90" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="105" y="93" fill="white" font-size="11" font-weight="600" text-anchor="middle">Codex Sessions</text>
+        <text x="105" y="109" fill="#94a3b8" font-size="8" text-anchor="middle">~/.codex/sessions/</text>
+        <text x="105" y="122" fill="#94a3b8" font-size="8" text-anchor="middle">rollout-*.jsonl</text>
+        <text x="105" y="135" fill="#94a3b8" font-size="7" text-anchor="middle">session_meta / response_item</text>
+        <text x="105" y="146" fill="#94a3b8" font-size="7" text-anchor="middle">function_call / outputs</text>
+
+        <!-- ============ STAGE 2: READER ============ -->
+        <rect x="230" y="70" width="150" height="90" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="305" y="93" fill="white" font-size="11" font-weight="600" text-anchor="middle">Rollout Reader</text>
+        <text x="305" y="109" fill="#94a3b8" font-size="8" text-anchor="middle">rollout-reader.ts</text>
+        <text x="305" y="122" fill="#94a3b8" font-size="7" text-anchor="middle">dedupe by payload.id</text>
+        <text x="305" y="133" fill="#94a3b8" font-size="7" text-anchor="middle">partial-line safe</text>
+        <text x="305" y="144" fill="#94a3b8" font-size="7" text-anchor="middle">wrapper-tolerant</text>
+
+        <!-- ============ STAGE 3: LEDGER ============ -->
+        <rect x="430" y="70" width="160" height="90" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="510" y="93" fill="white" font-size="11" font-weight="600" text-anchor="middle">Usage Ledger</text>
+        <text x="510" y="109" fill="#94a3b8" font-size="8" text-anchor="middle">usage-ledger.ts</text>
+        <text x="510" y="122" fill="#94a3b8" font-size="7" text-anchor="middle">userRepeats / rediscoveries</text>
+        <text x="510" y="133" fill="#94a3b8" font-size="7" text-anchor="middle">rawMentions (never promotes)</text>
+        <text x="510" y="144" fill="#34d399" font-size="7" text-anchor="middle">promotion: U&ge;2 &or; R&ge;2 + content gate</text>
+
+        <!-- ============ STAGE 4: EXPORT ============ -->
+        <rect x="640" y="70" width="140" height="90" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="710" y="93" fill="white" font-size="11" font-weight="600" text-anchor="middle">Candidates</text>
+        <text x="710" y="109" fill="#94a3b8" font-size="8" text-anchor="middle">candidates.jsonl</text>
+        <text x="710" y="122" fill="#94a3b8" font-size="7" text-anchor="middle">441 across 8 projects</text>
+        <text x="710" y="135" fill="#94a3b8" font-size="7" text-anchor="middle">key + counts + projectDir</text>
+
+        <!-- ============ STAGE 5: REDACTION ============ -->
+        <rect x="730" y="200" width="180" height="100" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="820" y="223" fill="white" font-size="11" font-weight="600" text-anchor="middle">Redaction Gate</text>
+        <text x="820" y="239" fill="#94a3b8" font-size="8" text-anchor="middle">redaction-gate.ts</text>
+        <text x="820" y="252" fill="#94a3b8" font-size="7" text-anchor="middle">fail-closed exclusion (not in-place)</text>
+        <text x="820" y="264" fill="#94a3b8" font-size="7" text-anchor="middle">secret shapes: sk-/ghp_/AKIA/tokens</text>
+        <text x="820" y="276" fill="#94a3b8" font-size="7" text-anchor="middle">credential paths, wait-calls</text>
+        <text x="820" y="290" fill="#fb7185" font-size="7" text-anchor="middle">441 &rarr; 283 passed &middot; 158 excluded</text>
+
+        <!-- ============ BUDGET LEDGER ============ -->
+        <rect x="30" y="370" width="170" height="120" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="115" y="393" fill="white" font-size="11" font-weight="600" text-anchor="middle">Budget Ledger</text>
+        <text x="115" y="409" fill="#94a3b8" font-size="8" text-anchor="middle">budget-ledger.ts (SQLite)</text>
+        <text x="115" y="422" fill="#94a3b8" font-size="7" text-anchor="middle">atomic reserve BEFORE request</text>
+        <text x="115" y="433" fill="#94a3b8" font-size="7" text-anchor="middle">reconcile actual usage.cost</text>
+        <text x="115" y="444" fill="#94a3b8" font-size="7" text-anchor="middle">ambiguous failure holds reservation</text>
+        <text x="115" y="455" fill="#94a3b8" font-size="7" text-anchor="middle">retry needs NEW key (no free replays)</text>
+        <text x="115" y="470" fill="#fbbf24" font-size="7" text-anchor="middle">$10/mo cap &middot; $6.85 spent &middot; cap never overshot</text>
+        <text x="115" y="482" fill="#94a3b8" font-size="7" text-anchor="middle">month rollover, history retained</text>
+
+        <!-- ============ REVIEWER ============ -->
+        <rect x="280" y="370" width="180" height="120" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="370" y="393" fill="white" font-size="11" font-weight="600" text-anchor="middle">Reviewer Client</text>
+        <text x="370" y="409" fill="#94a3b8" font-size="8" text-anchor="middle">reviewer-client.ts &rarr; GLM-5.3</text>
+        <text x="370" y="422" fill="#94a3b8" font-size="7" text-anchor="middle">Nous Portal /v1/chat/completions</text>
+        <text x="370" y="433" fill="#94a3b8" font-size="7" text-anchor="middle">project-scoped prompt v2</text>
+        <text x="370" y="444" fill="#94a3b8" font-size="7" text-anchor="middle">reasoning_content fallback</text>
+        <text x="370" y="455" fill="#94a3b8" font-size="7" text-anchor="middle">NOT_WORTH_SAVING escape</text>
+        <text x="370" y="470" fill="#fbbf24" font-size="7" text-anchor="middle">~$0.002-0.05 per candidate</text>
+
+        <!-- ============ OUTPUT VALIDATOR ============ -->
+        <rect x="510" y="370" width="180" height="120" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="600" y="393" fill="white" font-size="11" font-weight="600" text-anchor="middle">Output Validator</text>
+        <text x="600" y="409" fill="#94a3b8" font-size="8" text-anchor="middle">reviewer-output.ts</text>
+        <text x="600" y="422" fill="#94a3b8" font-size="7" text-anchor="middle">strict JSON contract, exact key set</text>
+        <text x="600" y="433" fill="#94a3b8" font-size="7" text-anchor="middle">content &le;300 chars, bounded fields</text>
+        <text x="600" y="444" fill="#94a3b8" font-size="7" text-anchor="middle">malformed &rarr; rejected, not repaired</text>
+        <text x="600" y="455" fill="#fb7185" font-size="7" text-anchor="middle">can ONLY emit proposed/tentative</text>
+        <text x="600" y="468" fill="#94a3b8" font-size="7" text-anchor="middle">verified requires evidence pointers</text>
+        <text x="600" y="480" fill="#94a3b8" font-size="7" text-anchor="middle">+ timestamp &mdash; unforgeable by reviewer</text>
+
+        <!-- ============ CONDENSE ============ -->
+        <rect x="740" y="370" width="180" height="120" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="830" y="393" fill="white" font-size="11" font-weight="600" text-anchor="middle">Condense Pass</text>
+        <text x="830" y="409" fill="#94a3b8" font-size="8" text-anchor="middle">condense-cluster.ts</text>
+        <text x="830" y="422" fill="#94a3b8" font-size="7" text-anchor="middle">deterministic signal clustering</text>
+        <text x="830" y="433" fill="#94a3b8" font-size="7" text-anchor="middle">npm/docker/node/python/paths</text>
+        <text x="830" y="444" fill="#94a3b8" font-size="7" text-anchor="middle">1 reviewer call per cluster merge</text>
+        <text x="830" y="455" fill="#94a3b8" font-size="7" text-anchor="middle">variants superseded, not deleted</text>
+        <text x="830" y="470" fill="#34d399" font-size="7" text-anchor="middle">247 &rarr; 112 active records</text>
+
+        <!-- ============ RECORD CONTRACT / WRITER ============ -->
+        <rect x="280" y="600" width="180" height="120" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="370" y="623" fill="white" font-size="11" font-weight="600" text-anchor="middle">Record Service</text>
+        <text x="370" y="639" fill="#94a3b8" font-size="8" text-anchor="middle">records.ts + candidate-writer.ts</text>
+        <text x="370" y="652" fill="#94a3b8" font-size="7" text-anchor="middle">immutable creates (txn-guarded)</text>
+        <text x="370" y="663" fill="#94a3b8" font-size="7" text-anchor="middle">cross-owner writes denied pre-mutation</text>
+        <text x="370" y="674" fill="#94a3b8" font-size="7" text-anchor="middle">TOCTOU input snapshot</text>
+        <text x="370" y="685" fill="#94a3b8" font-size="7" text-anchor="middle">3 independent status axes</text>
+        <text x="370" y="696" fill="#94a3b8" font-size="7" text-anchor="middle">private by default</text>
+        <text x="370" y="710" fill="#34d399" font-size="7" text-anchor="middle">world+eligible &rarr; safe projection only</text>
+
+        <!-- ============ BRAIN ============ -->
+        <rect x="980" y="580" width="170" height="200" rx="12" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="1065" y="603" fill="white" font-size="11" font-weight="600" text-anchor="middle">Disposable Brain</text>
+        <text x="1065" y="619" fill="#94a3b8" font-size="8" text-anchor="middle">live-run/brain.pglite</text>
+        <text x="1065" y="632" fill="#a78bfa" font-size="7" text-anchor="middle">G-brain PGLite engine</text>
+        <text x="1065" y="648" fill="#94a3b8" font-size="7" text-anchor="middle">records/&lt;uuid&gt; pages &middot; 270 total</text>
+        <text x="1065" y="659" fill="#94a3b8" font-size="7" text-anchor="middle">112 active / 158 superseded</text>
+        <text x="1065" y="673" fill="#94a3b8" font-size="7" text-anchor="middle">projects/&lt;name&gt; Project nodes</text>
+        <text x="1065" y="684" fill="#94a3b8" font-size="7" text-anchor="middle">typed links table</text>
+        <text x="1065" y="698" fill="#a78bfa" font-size="7" text-anchor="middle">belongs_to edges: record&rarr;project</text>
+        <text x="1065" y="709" fill="#a78bfa" font-size="7" text-anchor="middle">supersedes edges: canonical&rarr;variant</text>
+        <text x="1065" y="723" fill="#94a3b8" font-size="7" text-anchor="middle">vocab: 7 node types &middot; 7 verbs</text>
+        <text x="1065" y="734" fill="#94a3b8" font-size="7" text-anchor="middle">schema/dual-brain.json (tested</text>
+        <text x="1065" y="745" fill="#94a3b8" font-size="7" text-anchor="middle">vs real pack parser)</text>
+        <text x="1065" y="762" fill="#fb7185" font-size="7" text-anchor="middle">NOT Codex's live brain</text>
+        <text x="1065" y="772" fill="#fb7185" font-size="7" text-anchor="middle">(~/.codex/gbrain untouched)</text>
+
+        <!-- ============ PROJECT REGISTRY ============ -->
+        <rect x="540" y="620" width="170" height="80" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="625" y="643" fill="white" font-size="11" font-weight="600" text-anchor="middle">Project Registry</text>
+        <text x="625" y="659" fill="#94a3b8" font-size="8" text-anchor="middle">project-registry.ts</text>
+        <text x="625" y="672" fill="#94a3b8" font-size="7" text-anchor="middle">stable slug: projects/&lt;dir-name&gt;</text>
+        <text x="625" y="683" fill="#94a3b8" font-size="7" text-anchor="middle">checkout-independent identity</text>
+        <text x="625" y="694" fill="#94a3b8" font-size="7" text-anchor="middle">locations[] accumulate on move</text>
+
+        <!-- ============ BRIEFING ============ -->
+        <rect x="30" y="810" width="200" height="90" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="130" y="833" fill="white" font-size="11" font-weight="600" text-anchor="middle">Project Briefing</text>
+        <text x="130" y="849" fill="#94a3b8" font-size="8" text-anchor="middle">projectBriefing() + session-start.ts</text>
+        <text x="130" y="862" fill="#94a3b8" font-size="7" text-anchor="middle">graph walk: project &rarr; backlinks</text>
+        <text x="130" y="873" fill="#94a3b8" font-size="7" text-anchor="middle">currency=active only</text>
+        <text x="130" y="884" fill="#22d3ee" font-size="7" text-anchor="middle">&lt;project&gt;/.hermes-memory/BRIEFING.md</text>
+
+        <!-- ============ FRESH CODEX SESSION ============ -->
+        <rect x="300" y="810" width="180" height="90" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="390" y="833" fill="white" font-size="11" font-weight="600" text-anchor="middle">Fresh Codex Session</text>
+        <text x="390" y="849" fill="#94a3b8" font-size="8" text-anchor="middle">reads BRIEFING.md at start</text>
+        <text x="390" y="862" fill="#94a3b8" font-size="7" text-anchor="middle">via ~/.codex/AGENTS.md</text>
+        <text x="390" y="875" fill="#22d3ee" font-size="7" text-anchor="middle">acceptance passed 2026-10-08:</text>
+        <text x="390" y="887" fill="#22d3ee" font-size="7" text-anchor="middle">answered "how to run tests" from memory</text>
+
+        <!-- ============ UNBUILT (dashed, grayed) ============ -->
+        <rect x="540" y="810" width="200" height="90" rx="6" fill="rgba(30, 41, 59, 0.3)" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="640" y="833" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">Unbuilt (named, deferred)</text>
+        <text x="640" y="849" fill="#64748b" font-size="7" text-anchor="middle">session-end capture lane (cycle &rarr; snapshot)</text>
+        <text x="640" y="860" fill="#64748b" font-size="7" text-anchor="middle">live-brain migration (separate authorization)</text>
+        <text x="640" y="871" fill="#64748b" font-size="7" text-anchor="middle">Hermes side + cross-brain reads</text>
+        <text x="640" y="882" fill="#64748b" font-size="7" text-anchor="middle">embeddings &middot; session-history lane</text>
+
+        <!-- ================= ARROWS ================= -->
+        <!-- capture lane -->
+        <line x1="180" y1="115" x2="228" y2="115" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="380" y1="115" x2="428" y2="115" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="404" y="108" fill="#94a3b8" font-size="8" text-anchor="middle">typed events</text>
+        <line x1="590" y1="115" x2="638" y2="115" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="614" y="108" fill="#94a3b8" font-size="8" text-anchor="middle">gate</text>
+        <!-- candidates -> redaction (down-right) -->
+        <path d="M 710 160 L 710 250 L 728 250" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- redaction -> reviewer -->
+        <path d="M 820 300 L 820 340 L 370 340 L 370 368" fill="none" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-paid)"/>
+        <text x="590" y="333" fill="#fbbf24" font-size="8" text-anchor="middle">283 redacted candidates</text>
+        <!-- budget gates reviewer (dashed rose) -->
+        <line x1="200" y1="430" x2="278" y2="430" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead)"/>
+        <text x="239" y="422" fill="#fb7185" font-size="8" text-anchor="middle">reserve / reconcile</text>
+        <!-- reviewer -> validator -->
+        <line x1="460" y1="430" x2="508" y2="430" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead-paid)"/>
+        <text x="484" y="422" fill="#94a3b8" font-size="8" text-anchor="middle">JSON</text>
+        <!-- validator -> record service -->
+        <path d="M 600 490 L 600 540 L 370 540 L 370 598" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="485" y="533" fill="#94a3b8" font-size="8" text-anchor="middle">validated record</text>
+        <!-- condense -> brain (supersession) -->
+        <path d="M 830 490 L 830 540 L 1000 540 L 1000 600 L 1065 600 L 1065 578" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-data)"/>
+        <text x="930" y="533" fill="#a78bfa" font-size="8" text-anchor="middle">merge + supersedes edges</text>
+        <!-- record service -> brain -->
+        <path d="M 460 660 L 978 660" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-data)"/>
+        <text x="700" y="652" fill="#a78bfa" font-size="8" text-anchor="middle">putPage + addLink(belongs_to)</text>
+        <!-- registry -> brain -->
+        <path d="M 710 660 L 710 700 L 978 700" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-data)"/>
+        <!-- brain -> briefing (retrieval) -->
+        <path d="M 980 750 L 130 750 L 130 800" fill="none" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="550" y="743" fill="#22d3ee" font-size="8" text-anchor="middle">projectBriefing(): backlinks walk, active-only</text>
+        <!-- briefing -> fresh session -->
+        <line x1="230" y1="855" x2="298" y2="855" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="264" y="847" fill="#94a3b8" font-size="8" text-anchor="middle">BRIEFING.md</text>
+        <!-- feedback hint: fresh session eventually writes new sessions -->
+        <path d="M 390 810 L 390 30 L 105 30 L 105 68" fill="none" stroke="#64748b" stroke-width="1" stroke-dasharray="3,4" marker-end="url(#arrowhead)"/>
+        <text x="250" y="24" fill="#64748b" font-size="7" text-anchor="middle">new sessions (capture lane unbuilt &mdash; currently manual re-run)</text>
+
+        <!-- ================= LEGEND ================= -->
+        <text x="30" y="912" fill="white" font-size="9" font-weight="600">Legend</text>
+        <rect x="90" y="904" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="112" y="912" fill="#94a3b8" font-size="8">deterministic stage (free)</text>
+        <rect x="250" y="904" width="16" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="272" y="912" fill="#94a3b8" font-size="8">paid stage</text>
+        <rect x="355" y="904" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="377" y="912" fill="#94a3b8" font-size="8">gate / contract enforcement</text>
+        <rect x="530" y="904" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="552" y="912" fill="#94a3b8" font-size="8">G-brain storage</text>
+        <rect x="660" y="904" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="682" y="912" fill="#94a3b8" font-size="8">retrieval surface</text>
+        <line x1="800" y1="909" x2="820" y2="909" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="828" y="912" fill="#94a3b8" font-size="8">data flow</text>
+        <line x1="900" y1="909" x2="920" y2="909" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="928" y="912" fill="#94a3b8" font-size="8">budget gating</text>
+        <line x1="1020" y1="909" x2="1040" y2="909" stroke="#64748b" stroke-width="1" stroke-dasharray="3,4"/>
+        <text x="1048" y="912" fill="#94a3b8" font-size="8">unbuilt / manual</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Signal Theory</h3>
+        </div>
+        <ul>
+          <li>&bull; userRepeats &mdash; system failed to retain it</li>
+          <li>&bull; agentRediscoveries &mdash; discovery cost paid twice</li>
+          <li>&bull; rawMentions counted, never promote alone</li>
+          <li>&bull; min-content gate kills flow tokens</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>Enforced Honesty</h3>
+        </div>
+        <ul>
+          <li>&bull; reviewer can only emit proposed/tentative</li>
+          <li>&bull; verified needs evidence pointers + timestamp</li>
+          <li>&bull; ownership denied before any mutation</li>
+          <li>&bull; records immutable; supersession &ne; deletion</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Budget Invariants</h3>
+        </div>
+        <ul>
+          <li>&bull; reserve before request; refusal = no HTTP call</li>
+          <li>&bull; reconcile actual cost; failed tokens still billed</li>
+          <li>&bull; ambiguous failure holds the reservation</li>
+          <li>&bull; $10/mo cap, $6.85 spent, never overshot</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Graph Shape</h3>
+        </div>
+        <ul>
+          <li>&bull; records/&lt;uuid&gt; &rarr; belongs_to &rarr; projects/&lt;slug&gt;</li>
+          <li>&bull; canonical &rarr; supersedes &rarr; variants</li>
+          <li>&bull; stable identity across checkouts</li>
+          <li>&bull; 7 node types &middot; 7 verbs, pack-validated</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">
+      dual-brain-memory &bull; 51 tests green &bull; acceptance passed 2026-10-08 &bull; source: docs/HOW-IT-WORKS.md
+    </p>
+  </div>
+</body>
+</html>

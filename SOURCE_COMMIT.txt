@@ -1,0 +1,4 @@
+Clean public export of a private research repo.
+Source commit: 3285369cf0da2d8530a632d0795d728aaabdbdd9
+Exported: 2026-10-12
+Personal paths rewritten to ~/; private session data excluded.

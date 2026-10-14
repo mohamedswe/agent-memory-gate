@@ -1,0 +1,232 @@
+{
+  "notes": [
+    {
+      "id": "sa-typecheck",
+      "llm_calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "wall_s": 0.08
+    },
+    {
+      "id": "sa-tests",
+      "llm_calls": 1,
+      "prompt_tokens": 512,
+      "completion_tokens": 185,
+      "wall_s": 1.51
+    },
+    {
+      "id": "sa-graph",
+      "llm_calls": 1,
+      "prompt_tokens": 591,
+      "completion_tokens": 167,
+      "wall_s": 1.25
+    },
+    {
+      "id": "sa-graphify-skill",
+      "llm_calls": 1,
+      "prompt_tokens": 695,
+      "completion_tokens": 251,
+      "wall_s": 2.44
+    },
+    {
+      "id": "r07-p1",
+      "llm_calls": 1,
+      "prompt_tokens": 837,
+      "completion_tokens": 193,
+      "wall_s": 2.17
+    },
+    {
+      "id": "r07-p2",
+      "llm_calls": 1,
+      "prompt_tokens": 981,
+      "completion_tokens": 210,
+      "wall_s": 1.6
+    },
+    {
+      "id": "r07-heredoc",
+      "llm_calls": 1,
+      "prompt_tokens": 1016,
+      "completion_tokens": 637,
+      "wall_s": 4.62
+    },
+    {
+      "id": "r05",
+      "llm_calls": 1,
+      "prompt_tokens": 1001,
+      "completion_tokens": 260,
+      "wall_s": 3.15
+    },
+    {
+      "id": "op-1",
+      "llm_calls": 1,
+      "prompt_tokens": 1048,
+      "completion_tokens": 267,
+      "wall_s": 1.55
+    },
+    {
+      "id": "op-2",
+      "llm_calls": 1,
+      "prompt_tokens": 1058,
+      "completion_tokens": 323,
+      "wall_s": 2.19
+    },
+    {
+      "id": "op-3",
+      "llm_calls": 1,
+      "prompt_tokens": 1103,
+      "completion_tokens": 329,
+      "wall_s": 6.96
+    },
+    {
+      "id": "op-4",
+      "llm_calls": 1,
+      "prompt_tokens": 1027,
+      "completion_tokens": 456,
+      "wall_s": 2.86
+    }
+  ],
+  "probes": [
+    {
+      "id": "canonical-test",
+      "query": "What is the canonical way to run the test suite in dual-brain-memory?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Session summary (dual-brain run-07 phase 1, 2026-10-12): Built the redaction-report stage (queue JSONL -> markdown summary). Canonical runner is scripts/test.ts via bun; tests live in test/; suite mus",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm test runs the suite (151 tests at last audit). Run before any merge; suite must be wired into the canonical runner to avoid false greens.",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (dual-brain run-07 phase 2, 2026-10-12): Built the queue-stats stage. Read BRIEFING.md + HISTORY.md first via AGENTS.md wiring. Canonical 120 pass. Direct file writes, no heredocs. Cos",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "heredoc-failure",
+      "query": "What file-creation method corrupts TypeScript files, and what is the correct convention?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Failure record (2026-10-11): Creating TypeScript files via bash heredoc (cat <<EOF) corrupts backslash escape sequences in regexes. Hit 3 times. Convention: write .ts files with direct write tools.",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm run typecheck verifies types. Used repeatedly across sessions; the standard type gate before commits.",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (dual-brain run-07 phase 1, 2026-10-12): Built the redaction-report stage (queue JSONL -> markdown summary). Canonical runner is scripts/test.ts via bun; tests live in test/; suite mus",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "graph-determinism",
+      "query": "How do you verify the repository graph build is deterministic?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Procedure (software-auditor): npm run build:graph builds the repository graph deterministically. Verify by building twice and comparing SHA-256 of graph.json.",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (2026-10-12): Audited the public GitHub profile: 39 repos, strong ones are emara, vigil, Understand-Anything; ~14 student-era repos dilute signal; the memory research repo was private ",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm run typecheck verifies types. Used repeatedly across sessions; the standard type gate before commits.",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "run07-result",
+      "query": "What did run-07 phase 2 find about memory's effect on session cost?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Session summary (2026-10-12): Drafted profile content and a first public post from run-07 results: memory saves 29% uncached input, does not change correctness on derivable tasks; repetition gate star",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (dual-brain run-07 phase 2, 2026-10-12): Built the queue-stats stage. Read BRIEFING.md + HISTORY.md first via AGENTS.md wiring. Canonical 120 pass. Direct file writes, no heredocs. Cos",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (run-05, 2026-10-12): Evaluated whether captured failure knowledge prevents the heredoc trap. Baseline sessions hit the trap; memory-condition sessions avoided it. Setup uses scripts/s",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "typecheck",
+      "query": "What command verifies types in software-auditor?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Procedure (software-auditor): npm run typecheck verifies types. Used repeatedly across sessions; the standard type gate before commits.",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm test runs the suite (151 tests at last audit). Run before any merge; suite must be wired into the canonical runner to avoid false greens.",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm run build:graph builds the repository graph deterministically. Verify by building twice and comparing SHA-256 of graph.json.",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "corpus-b-1",
+      "query": "How do you run unit tests in the Insectflux backend?",
+      "wall_s": 0.02,
+      "results": [
+        {
+          "content": "Session summary (2026-10-12): Investigated the Insectflux backend test workflow. Docker compose profiles drive the backend-test image; unit tests run with -o addopts='' -q to bypass the coverage gate;",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (dual-brain run-07 phase 1, 2026-10-12): Built the redaction-report stage (queue JSONL -> markdown summary). Canonical runner is scripts/test.ts via bun; tests live in test/; suite mus",
+          "context": "General"
+        },
+        {
+          "content": "Procedure (software-auditor): npm test runs the suite (151 tests at last audit). Run before any merge; suite must be wired into the canonical runner to avoid false greens.",
+          "context": "General"
+        }
+      ]
+    },
+    {
+      "id": "corpus-b-2",
+      "query": "What did the public post draft report about memory and correctness?",
+      "wall_s": 0.01,
+      "results": [
+        {
+          "content": "Session summary (2026-10-12): Drafted profile content and a first public post from run-07 results: memory saves 29% uncached input, does not change correctness on derivable tasks; repetition gate star",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (2026-10-12): Audited the public GitHub profile: 39 repos, strong ones are emara, vigil, Understand-Anything; ~14 student-era repos dilute signal; the memory research repo was private ",
+          "context": "General"
+        },
+        {
+          "content": "Session summary (2026-10-12): Researched the agent-memory literature landscape: MemGPT/Letta (OS-style memory hierarchy), Mem0 (extract-consolidate-retrieve), Zep/Graphiti (temporal knowledge graphs),",
+          "context": "General"
+        }
+      ]
+    }
+  ],
+  "corpus_split": {
+    "A": 8,
+    "B": 4
+  },
+  "total_write_tokens": {
+    "calls": 11,
+    "prompt": 9869,
+    "completion": 3278
+  }
+}

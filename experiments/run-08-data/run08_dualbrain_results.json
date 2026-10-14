@@ -1,0 +1,52 @@
+{
+  "probes": [
+    {
+      "id": "canonical-test",
+      "ground_truth": "scripts/test\\.ts|bun.*test|canonical runner",
+      "recall": true
+    },
+    {
+      "id": "heredoc-failure",
+      "ground_truth": "heredoc|direct file",
+      "recall": true
+    },
+    {
+      "id": "graph-determinism",
+      "ground_truth": "build:graph|graph\\.json|SHA-?256",
+      "recall": true
+    },
+    {
+      "id": "run07-result",
+      "ground_truth": "-?29%|30,?826|phase 2",
+      "recall": false
+    },
+    {
+      "id": "typecheck",
+      "ground_truth": "typecheck",
+      "recall": true
+    },
+    {
+      "id": "corpus-b-1",
+      "ground_truth": "docker compose|addopts",
+      "recall": true
+    },
+    {
+      "id": "corpus-b-2",
+      "ground_truth": "29%|correctness",
+      "recall": false
+    }
+  ],
+  "source": "dual-brain .project-memory (live)",
+  "briefing_lines": 114,
+  "history_lines": 64,
+  "recall": "5/7",
+  "projects_probed": 4,
+  "read_tokens_all_projects_approx": 6016,
+  "read_tokens_per_session_approx": null,
+  "read_tokens_per_project": {
+    "software-auditor": 3049,
+    "dual-brain-memory": 836,
+    "Insectflux-dev": 1541,
+    "emara-release": 590
+  }
+}

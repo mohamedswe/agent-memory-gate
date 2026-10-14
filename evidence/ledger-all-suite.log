@@ -1,0 +1,33 @@
+bun test v1.4.2 (744846f84)
+
+test\record-boundary.test.ts:
+  Setting up brain schema (v146)...
+  141 migration(s) applied
+(pass) create snapshots nested input before yielding to the database [12.99ms]
+
+test\records.test.ts:
+  Setting up brain schema (v146)...
+  141 migration(s) applied
+  Setting up brain schema (v146)...
+  141 migration(s) applied
+(pass) owned records round-trip through separate real page stores [19.31ms]
+(pass) cross-brain reads require both opt-ins and expose only a safe projection [37.71ms]
+(pass) immutable create conflicts even across service wrappers and concurrent requests [10.32ms]
+(pass) only the two known identities can own a service or call its API [14.59ms]
+(pass) malformed records are rejected without touching the page store [13.47ms]
+(pass) verified requires evidence pointers and a verification timestamp, not a truth guarantee [5.81ms]
+(pass) cross-owner writes are denied before any page mutation [2.45ms]
+
+test\schema.test.ts:
+(pass) local manifest exists and is accepted by the real Gbrain JSON loader and parser [13.63ms]
+(pass) declares exactly the seven graph page types [0.41ms]
+(pass) declares exactly the seven relationship verbs with inverses [0.29ms]
+
+test\usage-ledger.test.ts:
+(pass) normalization folds case, punctuation, and whitespace variants into one key [0.26ms]
+(pass) distinct keys stay distinct and counts never bleed [0.09ms]
+
+ 13 pass
+ 0 fail
+ 145 expect() calls
+Ran 13 tests across 4 files. [9.20s]

@@ -1,0 +1,23 @@
+{
+  "api_version": "gbrain-schema-pack-v1",
+  "name": "dual-brain",
+  "version": "0.1.0",
+  "page_types": [
+    { "name": "project", "primitive": "entity" },
+    { "name": "goal", "primitive": "concept" },
+    { "name": "decision", "primitive": "annotation" },
+    { "name": "attempt", "primitive": "temporal" },
+    { "name": "finding", "primitive": "annotation" },
+    { "name": "procedure", "primitive": "concept" },
+    { "name": "evidence", "primitive": "media" }
+  ],
+  "link_types": [
+    { "name": "belongs_to", "inverse": "contains" },
+    { "name": "attempts", "inverse": "attempted_by" },
+    { "name": "produces", "inverse": "produced_by" },
+    { "name": "supports", "inverse": "supported_by" },
+    { "name": "contradicts", "inverse": "contradicted_by" },
+    { "name": "supersedes", "inverse": "superseded_by" },
+    { "name": "depends_on", "inverse": "depended_on_by" }
+  ]
+}

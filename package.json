@@ -1,0 +1,8 @@
+{
+  "name": "dual-brain-memory",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun scripts/test.ts"
+  }
+}
