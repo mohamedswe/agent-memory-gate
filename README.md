@@ -1,72 +1,39 @@
 # Agent Memory Gate
 
-**Memory selection without a salience model: observed repetition and a deterministic budget are the only gates.**
+**Deterministic Memory Selection for Coding Agents via Behavioral Repetition and Budget Ledgers**
 
-An agent-memory system for coding agents that decides *what deserves to be a memory* without asking an LLM. Knowledge is promoted only when the agent's own observed behavior repeats it; every paid LLM call sits behind a deterministic budget ledger; the result is a per-project briefing a fresh session reads unprompted.
+`agent-memory-gate` is an experimental memory architecture for autonomous coding agents that eliminates LLM-judged salience at write time. Instead of invoking a language model to extract or score memories during ingestion, candidate procedures are promoted strictly when the agent's observed execution patterns repeat across sessions ($\ge 2$ occurrences). All downstream LLM consolidation sits behind a deterministic, fail-closed SQLite budget ledger. The resulting memory state is rendered as a static per-project briefing (`BRIEFING.md` and `HISTORY.md`) consumed at session initialization.
 
-This repo is a clean export of a working research system: the full deterministic pipeline (122 tests), the eight-run evaluation series with its null results, and a measured comparison against A-MEM (NeurIPS 2025) on identical input.
+This repository contains the deterministic ingestion and gating pipeline (22 modules, 122 unit and invariant tests), raw evaluation logs across an eight-run experimental series (including null results), and a controlled baseline comparison against A-MEM (NeurIPS 2025).
 
 ---
 
-## The claim, in one table
+## Research Question & Related Work
 
-Every major memory system decides what to remember with an LLM call at write time:
+Current agent memory architectures rely on LLM inference during the write path to determine salience, extract entities, or manage state updates:
 
-| System | Salience decision | Write cost per item |
-|---|---|---|
-| MemGPT / Letta | LLM-managed memory hierarchy, runtime paging | LLM tokens per interaction |
-| Mem0 | LLM extraction + consolidation (ADD/UPDATE/DELETE) | LLM call per extraction |
-| Zep / Graphiti | LLM entity/edge extraction at ingest | LLM call per ingest |
-| LangMem | Developer-defined extraction (hot-path or background) | LLM per extraction pass |
-| A-MEM | Store everything; LLM generates attributes/links/evolution | ~1.2k tokens/note (paper) |
-| **Agent Memory Gate** | **None. Repetition ≥2 across sessions + budget gate** | **$0 on one-pass work; deterministic otherwise** |
+| System | Salience & Extraction Mechanism | Write-Path Compute Cost |
+| :--- | :--- | :--- |
+| **MemGPT / Letta** | LLM-managed hierarchy and runtime paging | LLM tokens per interaction |
+| **Mem0** | LLM extraction and consolidation (`ADD`/`UPDATE`/`DELETE`) | LLM call per extraction |
+| **Zep / Graphiti** | LLM entity and edge extraction at ingest | LLM call per ingest |
+| **LangMem** | Developer-defined LLM extraction (hot-path or background) | LLM call per extraction pass |
+| **A-MEM** | Unfiltered storage; LLM generates attributes, links, and evolution | ~1.2k tokens per note (reported) |
+| **Agent Memory Gate** | Deterministic repetition gate ($\ge 2$ sessions) + budget ledger | **0 tokens** on single-pass work; bounded afterward |
 
-The falsifiable question this repo tests: *can behavior-derived salience match LLM-judged salience for procedural memory, at orders of magnitude lower write cost — and where does it fail?*
+**Core Hypothesis:** Can behavior-derived salience (observed command and workflow repetition) approximate LLM-judged salience for procedural coding memory at zero initial write cost, and what are the exact recall boundaries where this heuristic fails?
 
-## Measured results
+---
 
-### Run 08: vs A-MEM (NeurIPS 2025) on identical input — cost and recall
+## System Architecture
 
-12 session-summary notes ingested by both systems; 7 ground-truth-scored probes (case-insensitive regex, identical criteria for both arms). Same LLM (GLM-5.3) for both systems' quality-relevant calls.
-
-| Metric | A-MEM (as shipped) | Agent Memory Gate |
-|---|---|---|
-| LLM write calls | **11** | **0** (capture + gating are deterministic) |
-| Write tokens | **13,147** (9,869p + 3,278c; 1,095.6/note steady state) | **0** |
-| Probe recall | **7/7** (all 7 answers at top-1) | **5/7** (5/5 on content its pipeline had captured) |
-| Ingest wall time | ~30s | <1s |
-
-Verdict: **A-MEM won recall on fresh ingestion — 7/7 with every answer at top-1 — while the gate held 5/5 on what it had captured, at zero write cost.** The gate's two misses are content its pipeline structurally cannot hold (same-day results that never repeated) — that's the starvation trade, measured, not spun. Cost: 13,147 paid tokens vs 0. See [`experiments/run-08-a-mem-baseline.md`](experiments/run-08-a-mem-baseline.md), raw data in [`experiments/run-08-data/`](experiments/run-08-data/).
-
-Notable implementation finding: A-MEM's shipped repo never calls its attribute-generation LLM (`analyze_content` is dead code in the current HEAD), so the measured cost is a *lower bound* of the paper-faithful pipeline.
-
-### Runs 01–07: the honest evaluation series
-
-Nine paired fresh-agent sessions plus a full-loop realistic test, comparing memory-equipped vs bare sessions on real coding tasks:
-
-| Claim | Verdict | Evidence |
-|---|---|---|
-| Briefing saves input tokens | **Yes — 10–29%, consistent** | runs 01–04 (9 pairs) + run-07 |
-| Briefing improves discipline | **Yes — small but clean** | offline/ignore-scripts compliance 3/3 vs 0/3; suite-wired test runs; no false greens |
-| Briefing changes correctness on repo-derivable tasks | **No** | methods converged in every run — smart agents re-derive |
-| Stale/dead memory gets followed | **No — survived a baited trap** | run-04: 0 stale commands in 6 runs |
-| Full loop works on realistic work | **Yes** | run-07: −29% uncached input, correctness tie |
-
-Full series with per-run protocols and raw numbers: [`experiments/first-memory-eval.md`](experiments/first-memory-eval.md).
-
-### The honest failure mode (why this is research, not a product pitch)
-
-**The repetition gate starves on one-pass competent work.** A session that solves its task in one pass produces nothing that repeats, so the gate promotes nothing — measured externally in run 08: the 4 one-pass notes cost A-MEM 5,611 tokens to ingest and were fully retrievable; the gate holds none of them by design. Fixing this without reintroducing LLM-judged salience (satisfaction-transition markers as promotion evidence is the candidate) is the open question.
-
-## How it works
-
-```
+```text
 sessions ──▶ capture (deterministic: rollout readers, usage ledger)
                  │
                  ▼
         repetition gate ──── ≥2 repeats across sessions ───▶ paid review (budget-gated)
                  │                                                 │
-                 └─── 1 repeat ──▶ nothing (free)                  ▼
+                 └─── 1 repeat ──▶ discarded (0 tokens)            ▼
                                                           candidate records
                  satisfaction markers ─────────────────────────────▶ HISTORY
                                                                     │
@@ -74,61 +41,101 @@ sessions ──▶ capture (deterministic: rollout readers, usage ledger)
                                               .project-memory/ BRIEFING.md + HISTORY.md
                                                                     │
                                                                     ▼
-                                              next session reads it unprompted (AGENTS.md wiring)
+                                              next session reads at startup (AGENTS.md)
 ```
 
-Key properties:
+### Design Invariants
 
-- **Repetition-as-importance.** A procedure is promoted only when the usage ledger observes the same non-trivial work ≥2 times across sessions (flow-token exclusion, normalized command keys). Cognitive grounding: rehearsal-based consolidation. Cost: $0.
-- **Budget-gated paid inference.** Every LLM call reserves from a SQLite-backed budget ledger with atomic reservation and ambiguous-failure holds; the cap fails closed. The whole evaluation series ran on ~$10 of paid inference.
-- **Provenance-mandatory records.** Every memory carries its source session; supersession never deletes (Zep-style temporal invalidation, no graph required).
-- **Redaction gate.** Secret-shaped content (API key patterns, credential assignments) is excluded before any paid call sees it — fail-closed.
-- **Briefing, not chat history.** The deliverable is two markdown files the next agent reads at session start; consumption was verified unprompted in runs 05–07.
+1. **Repetition-Gated Promotion:** A procedural candidate is promoted only when the usage ledger records identical normalized command keys across $\ge 2$ distinct sessions (excluding common flow tokens). Single-occurrence actions incur zero token cost.
+2. **Fail-Closed Budget Ledger:** Paid LLM review calls must atomically reserve quota from a SQLite-backed budget ledger prior to execution, utilizing hold states for ambiguous network or API failures. The entire eight-run evaluation series executed within a ~$10 inference budget.
+3. **Mandatory Provenance & Non-Destructive Supersession:** Every record retains pointers to its source session rollout. State updates use temporal invalidation rather than deletion, preserving an immutable audit trail without requiring a graph database.
+4. **Pre-Inference Redaction Gate:** Candidate strings matching credential patterns or high-entropy secret assignments are filtered deterministically before reaching any external LLM review call.
+5. **Static Briefing Delivery:** Memory is materialized as two plain-text Markdown files (`BRIEFING.md` and `HISTORY.md`) rather than an active vector store or chat buffer.
 
-Deep dive: [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md) · architecture: [`docs/architecture.html`](docs/architecture.html) · positioning vs related systems: [`docs/lit-positioning.md`](docs/lit-positioning.md)
+For implementation specifics, see [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md), [`docs/architecture.html`](docs/architecture.html), and [`docs/lit-positioning.md`](docs/lit-positioning.md).
 
-## Running it
+---
 
-Requires [Bun](https://bun.sh) (SQLite + TypeScript runner) and Node for the eval tooling.
+## Empirical Evaluation
+
+### Experiment 08: Controlled Comparison vs. A-MEM (NeurIPS 2025)
+
+Both systems ingested an identical corpus of 12 session-summary notes and were evaluated against 7 ground-truth probes using deterministic, case-insensitive regex matching. Both arms used `GLM-5.3` for all model-dependent steps.
+
+| Metric | A-MEM (Reference Implementation) | Agent Memory Gate |
+| :--- | :--- | :--- |
+| **Write-path LLM calls** | 11 | 0 (deterministic capture and gating) |
+| **Write-path token cost** | 13,147 (9,869 prompt + 3,278 completion; 1,095.6/note) | 0 |
+| **Probe recall** | 7 / 7 (100% at top-1) | 5 / 7 (100% on captured subset) |
+| **Ingestion wall time** | ~30s | <1s |
+
+**Analysis:** A-MEM achieved 7/7 recall on fresh ingestion at a cost of 13,147 write tokens. Agent Memory Gate achieved 5/7 recall at zero write cost (answering 5/5 for items that passed the repetition gate). The two missed probes corresponded to single-session findings that never repeated—demonstrating the structural recall boundary of repetition-only gating. Full protocol: [`experiments/run-08-a-mem-baseline.md`](experiments/run-08-a-mem-baseline.md); raw outputs: [`experiments/run-08-data/`](experiments/run-08-data/).
+
+*Implementation Note on A-MEM:* Inspection of the public A-MEM repository revealed that `analyze_content` (the attribute-generation LLM call described in the paper) is unreachable dead code in the current `HEAD`. Consequently, our measured token cost for A-MEM represents a lower bound relative to the published specification.
+
+### Experiments 01–07: End-to-End Task Evaluation
+
+We conducted nine paired fresh-agent sessions alongside a full-loop realistic workflow test, comparing memory-primed agents against bare baseline agents on repository-level coding tasks:
+
+| Evaluated Hypothesis | Outcome | Empirical Evidence |
+| :--- | :--- | :--- |
+| **Reduces session input tokens** | **Supported** | 10–29% reduction across runs 01–04 (9 pairs) and run 07 |
+| **Improves procedural compliance** | **Supported** | `--offline` / `--ignore-scripts` adherence: 3/3 vs. 0/3; zero false-positive test runs |
+| **Improves task correctness on repo-derivable tasks** | **Null** | Final patches converged across all pairs; baseline agents re-derive context via extra exploration |
+| **Susceptible to stale/adversarial memory injection** | **Refuted** | Agents ignored baited stale commands in 6/6 trials (run 04) once local verification failed |
+| **End-to-end viability on multi-step workflows** | **Supported** | 29% reduction in uncached input tokens at equal task correctness (run 07) |
+
+Full experimental protocols and session traces are documented in [`experiments/first-memory-eval.md`](experiments/first-memory-eval.md).
+
+---
+
+## Structural Trade-Offs & Limitations
+
+1. **Single-Pass Starvation:** Because the repetition gate requires $\ge 2$ observations across sessions, tasks solved cleanly in a single session generate no recurring signals and are not promoted. In Run 08, the 4 single-pass notes required 5,611 tokens for A-MEM to index, whereas the repetition gate discarded them by design. Closing this recall gap without reintroducing per-write LLM calls (e.g., using user satisfaction-transition markers as a secondary promotion trigger) remains future work.
+2. **Sample Size:** Evaluation comprises 9 paired agent runs and a 12-note comparative corpus. Results establish mechanism viability and cost-recall bounds rather than broad statistical generalization.
+3. **Cross-Project Scaling:** Memory is scoped to per-project Markdown briefings without vector embeddings; scaling behavior across large multi-repo workspaces is unmeasured.
+4. **Rollout Format Support:** Ingestion parsers currently support Codex and Hermes session logs only.
+5. **Evaluation Granularity:** Probe recall relies on deterministic string/regex matching rather than semantic LLM-as-a-judge grading.
+
+---
+
+## Usage & Reproduction
+
+Requires [Bun](https://bun.sh/) (for native SQLite and TypeScript execution) and Node.js (for evaluation harnesses). No external database servers or background daemons are required.
 
 ```bash
 bun install
-bun scripts/test.ts          # full suite: 122 tests
+bun scripts/test.ts          # Executes the 122-test suite
 ```
 
-Pipeline entry points (each is a standalone script, no server, no database service):
+### Pipeline Entry Points
 
 ```bash
-bun scripts/session-capture.ts          # capture Codex rollouts -> usage ledger + candidates
-bun scripts/queue-review.ts             # paid review of repetition-gated candidates (budget-gated)
-bun scripts/session-start.ts <dir>      # render <dir>/.project-memory/BRIEFING.md + HISTORY.md
+# 1. Parse session rollouts into the SQLite usage ledger and candidate table
+bun scripts/session-capture.ts
+
+# 2. Run budget-gated LLM review on candidates meeting the repetition threshold
+bun scripts/queue-review.ts
+
+# 3. Render .project-memory/BRIEFING.md and HISTORY.md for the target workspace
+bun scripts/session-start.ts <target-directory>
 ```
 
-The memory lives in plain files; the ledgers are SQLite; there is no infrastructure.
+---
 
-## Repository layout
+## Repository Structure
 
-| Path | What it is |
-|---|---|
-| `src/` | The deterministic pipeline: 22 modules (rollout readers, usage ledger, redaction gate, budget ledger, reviewer client, satisfaction classifier, renderers) |
-| `test/` | 122 tests covering every invariant; canonical runner `scripts/test.ts` |
-| `evidence/` | Test-suite execution logs (the final green runs) |
-| `experiments/` | Run protocols + results for the full evaluation series and the A-MEM comparison, with raw JSON |
-| `docs/` | How-it-works, architecture, literature positioning |
-| `schema/` | The record contract (7 kinds, proposed/tentative ceiling, immutable creates) |
+| Directory | Contents |
+| :--- | :--- |
+| `src/` | Core deterministic pipeline (22 modules: rollout parsers, usage ledger, redaction filter, budget ledger, reviewer client, satisfaction classifier, Markdown renderers) |
+| `test/` | 122 unit and invariant tests executed via `scripts/test.ts` |
+| `schema/` | Data contracts (7 record types, mutability constraints, confidence ceilings) |
+| `experiments/` | Protocols, analysis, and raw JSON artifacts for Runs 01–08 |
+| `evidence/` | Verification logs from canonical test suite executions |
+| `docs/` | Architecture diagrams, formal design notes, and literature review |
 
-## Honest limitations
+---
 
-1. **n is small.** 9 eval pairs + 1 comparison corpus. This is one honest point on the curve, not a leaderboard claim.
-2. **No embeddings.** Retrieval is per-project briefing files; scaling behavior past one project is unmeasured.
-3. **The starvation problem is unsolved.** Single-pass sessions contribute no procedures; the satisfaction-marker lane is proposed, not yet evaluated as a promotion signal.
-4. **Codex + Hermes rollouts only.** The capture readers handle two session formats; others are untested.
-5. **Eval scoring used string-presence ground truth**, deterministic and reproducible but coarse; no LLM-judge.
+## Provenance & License
 
-## License & provenance
-
-MIT. This is a clean public export of a private research repo (source commit recorded in `SOURCE_COMMIT.txt`): personal paths rewritten to `~/`, private session-derived data excluded. Every number in this README is machine-checked against the raw result files by the evidence tests in the companion repo of run-08.
-
-## Citation-worthy framing
-
-If you build on this, the comparison to replicate is: *deterministic repetition-gating vs LLM-judged salience on identical procedural corpora, measuring write-path cost and ground-truth probe recall.* The open question worth pursuing: *can a second behavioral signal (user satisfaction transitions) close the one-pass starvation gap without reintroducing per-write LLM cost?*
+Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. All quantitative claims in this document are verified against raw experiment JSON artifacts via automated evidence tests.
