@@ -66,11 +66,13 @@ LLM-judged salience IS the experiment.
 | Stale content gets followed | NO — survived baiting | run-04 trap |
 | Loop works end-to-end on real work | YES | run-07: −29% uncached, correctness tie |
 
-Not yet done: a **direct comparison arm vs Mem0** (or A-MEM) on the same
-workload — the missing piece for any external claim. A-MEM is the cleaner
-baseline than Mem0: open source, self-hosted, no API-key entanglement, and its
-"no importance gate, store-and-link everything" stance is the exact opposite
-pole to repetition-gating.
+~~Not yet done: a **direct comparison arm vs Mem0** (or A-MEM) on the same
+workload.~~ **Done 2026-10-12 (run-08, `experiments/run-08-a-mem-baseline.md`):**
+A-MEM paid 13,147 write tokens / 11 calls for 12 notes vs 0 for the gate;
+A-MEM won recall 7/7 vs 5/7 (gate 5/5 on content it had captured). A-MEM
+was the cleaner baseline than Mem0: open source, self-hosted, no API-key
+entanglement, and its "no importance gate, store-and-link everything" stance
+is the exact opposite pole to repetition-gating.
 
 ## Positioning one-liners (for the research statement / README)
 

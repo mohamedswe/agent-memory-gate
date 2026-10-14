@@ -1,8 +1,11 @@
 {
-  "name": "dual-brain-memory",
+  "name": "agent-memory-gate",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "bun scripts/test.ts"
-  }
+  },
+  "version": "0.1.0",
+  "description": "Deterministic repetition-gated agent memory",
+  "license": "MIT"
 }

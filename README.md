@@ -101,23 +101,40 @@ Full experimental protocols and session traces are documented in [`experiments/f
 
 ## Usage & Reproduction
 
-Requires [Bun](https://bun.sh/) (for native SQLite and TypeScript execution) and Node.js (for evaluation harnesses). No external database servers or background daemons are required.
+Requires [Bun](https://bun.sh/) (for native SQLite and TypeScript execution) and Python 3 (for evidence verification). No external database servers or background daemons are required.
 
+### 1. Prerequisites
+
+Install `gbrain` (Postgres-native memory engine):
 ```bash
-bun install
-bun scripts/test.ts          # Executes the 122-test suite
+bun install -g github:garrytan/gbrain#latest-stable
 ```
 
-### Pipeline Entry Points
+### 2. Run the Unit & Invariant Suite
 
 ```bash
-# 1. Parse session rollouts into the SQLite usage ledger and candidate table
+bun scripts/test.ts          # Executes the 122-test suite across 27 files
+```
+
+### 3. Verify Experimental Evidence
+
+Every figure quoted in this report is machine-checked against raw experimental JSON data:
+```bash
+python -m pytest tests-run08/  # Executes the 13 automated evidence verification tests
+```
+
+### 4. Pipeline Entry Points
+
+Each is a standalone script (no background services, plain files + SQLite):
+
+```bash
+# Parse session rollouts into the SQLite usage ledger and candidate queue
 bun scripts/session-capture.ts
 
-# 2. Run budget-gated LLM review on candidates meeting the repetition threshold
+# Run budget-gated LLM review on candidates meeting the repetition threshold
 bun scripts/queue-review.ts
 
-# 3. Render .project-memory/BRIEFING.md and HISTORY.md for the target workspace
+# Render .project-memory/BRIEFING.md and HISTORY.md for the target workspace
 bun scripts/session-start.ts <target-directory>
 ```
 
@@ -125,10 +142,11 @@ bun scripts/session-start.ts <target-directory>
 
 ## Repository Structure
 
-| Directory | Contents |
+| Directory / File | Contents |
 | :--- | :--- |
 | `src/` | Core deterministic pipeline (22 modules: rollout parsers, usage ledger, redaction filter, budget ledger, reviewer client, satisfaction classifier, Markdown renderers) |
 | `test/` | 122 unit and invariant tests executed via `scripts/test.ts` |
+| `tests-run08/` | Automated evidence verification suite (13 pytest tests checking all reported figures against raw JSON outputs) |
 | `schema/` | Data contracts (7 record types, mutability constraints, confidence ceilings) |
 | `experiments/` | Protocols, analysis, and raw JSON artifacts for Runs 01–08 |
 | `evidence/` | Verification logs from canonical test suite executions |
@@ -138,4 +156,8 @@ bun scripts/session-start.ts <target-directory>
 
 ## Provenance & License
 
-Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. All quantitative claims in this document are verified against raw experiment JSON artifacts via automated evidence tests.
+Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. All quantitative claims in this document are verified against raw experiment JSON artifacts via automated evidence tests (`python -m pytest tests-run08/`).
+
+## Citation-Worthy Framing
+
+If you build on this, the comparison to replicate is: *deterministic repetition-gating vs LLM-judged salience on identical procedural corpora, measuring write-path cost and ground-truth probe recall.* The open question worth pursuing: *can a second behavioral signal (user satisfaction transitions) close the one-pass starvation gap without reintroducing per-write LLM cost?*

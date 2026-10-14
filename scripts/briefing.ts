@@ -12,7 +12,7 @@ const engine = new PGLiteEngine();
 await engine.connect({ database_path: 'live-run/brain.pglite' });
 await engine.initSchema();
 
-const target = process.argv[2] ?? 'C:/Users/dev/~/Desktop/software-auditor';
+const target = process.argv[2] ?? process.cwd();
 const briefing = await projectBriefing(engine, target);
 console.log(`# Briefing for ${briefing.project.slug} (${briefing.records.length} records)`);
 console.log(`locations: ${briefing.project.locations.join(', ')}`);

@@ -2,8 +2,8 @@
 
 Usage (Git Bash):
   python3 scripts/setup-memory-eval.py \\
-    --repo C:/Users/dev/Development/GitHub/software-auditor \\
-    --briefing C:/Users/dev/~/Desktop/software-auditor/.project-memory/BRIEFING.md \\
+    --repo path/to/repo \\
+    --briefing path/to/.project-memory/BRIEFING.md \\
     --out .eval-local/first-run
 
 No agents, network calls, live-brain writes, or paid inference. The two snapshots

@@ -1,8 +1,10 @@
 # How everything works — the complete walkthrough
 
 Written 2026-10-08, after the acceptance test passed (a fresh Codex session
-answered "how do I run tests" from the briefing). This is the full, honest
-picture: what runs, in what order, what enforces what, and what is NOT built.
+answered "how do I run tests" from the briefing). Updated 2026-10-14 with the
+cross-session lane (1b), the satisfaction lane (2), the Hermes adapter, and
+HISTORY.md (stages 15–19). This is the full, honest picture: what runs, in
+what order, what enforces what, and what is NOT built.
 
 ## The one-paragraph version
 
@@ -15,6 +17,11 @@ linked to a stable project identity, condense near-duplicates into single
 canonical records, and render the active ones as a briefing file that a fresh
 Codex session reads at startup. Repetition made us look; the reviewer made it
 readable; the contract made it honest; the graph made it findable.
+
+Since 2026-10-11 there are two more signals: a key that appears once in many
+sessions of the same project (cross-session repetition), and the user's
+satisfaction arc across a conversation (Codex and Hermes), whose transitions
+become dated markers rendered into a second file, HISTORY.md.
 
 ## Stage by stage
 
@@ -142,11 +149,14 @@ Reality check: 247 -> 112 active after two passes (23 clusters merged,
 
 Retrieval: project page -> backlinks (real graph walk) -> active records only
 -> rendered handoff: procedures first ("How to work here"), then findings.
-Writes `<project>/.hermes-memory/BRIEFING.md`, or stdout with --stdout.
+Writes `<project>/.project-memory/BRIEFING.md` (plus `HISTORY.md`, stage 18),
+or stdout with --stdout. (Renamed from `.hermes-memory/` on 2026-10-11: the
+memory is project-scoped, not agent-scoped.)
 
 ### 12. The wiring — `~/.codex/AGENTS.md`
 
-Tells Codex at session start to read `.hermes-memory/BRIEFING.md` if present.
+Tells Codex at session start to read `.project-memory/BRIEFING.md` (and
+`HISTORY.md`) if present, and how to render it if missing.
 The briefing is declared data, not authority: current instructions override it.
 ACCEPTANCE TEST (passed 2026-10-08): fresh Codex session in software-auditor
 answered "how do I run tests" from the briefing — including the
@@ -175,23 +185,98 @@ the normal writer (never wipes the brain), marks each queue line with its
 outcome, and appends a durable report (`live-run/queue-review-report.jsonl`).
 Re-runs are idempotent. First live run: 4 candidates → 1 saved
 (session-scoped write_stdin procedure), 3 NOT_WORTH_SAVING, 0 failed, $0.015.
+Since 2026-10-11 it also handles satisfaction jobs (stage 17) and
+cross-session candidates (stage 16) in the same run.
+
+### 15. The injection filter — `src/injection-filter.ts`
+
+Codex rollouts carry system-injected "user" messages: `<environment_context>`,
+AGENTS.md instruction wrappers, plugin recommendations, resumed history. A
+real-data census found them polluting both the key space and the satisfaction
+trajectories. One shape-matched filter, shared by every lane, drops them at
+observation time.
+
+### 16. Cross-session repetition (lane 1b, built 2026-10-12) — `src/cross-session-ledger.ts`
+
+The within-session gate structurally cannot see the textbook durable
+procedure: a command that appears ONCE in EVERY session (never ≥2 within
+one). The cross-session ledger counts DISTINCT SESSIONS per key, scoped per
+project (a key repeating across different projects is a generic habit, not
+project knowledge). At ≥2 distinct sessions the key is queued with
+`crossSession: true` provenance, then added to a promoted-set so it is never
+re-queued (the start command would otherwise be re-paid forever). State is
+durable JSON (`live-run/cross-session-ledger.json`); a corrupt file falls back
+to fresh (re-observe, never silently skip).
+
+Reality check: census over 146 real sessions → 55 promotions (docker compose
+test builds, `git safe.directory`, skill-doc reads); review saved 41.
+Known limit: keys are exact strings including incidental args, so only 57 of
+12,056 observed keys have crossed.
+
+### 17. Satisfaction lane (lane 2, built 2026-10-11) — `src/session-trajectory.ts`, `src/satisfaction-classifier.ts`, `src/satisfaction-transitions.ts`
+
+Repetition can only surface procedures. Lane 2 uses a different signal:
+the user's reaction. Capture extracts the user-turn sequence for free (one
+satisfaction job per session with real user turns). Review makes ONE
+batched paid call per session that labels every turn pleased / neutral /
+displeased — same discipline as the reviewer (reserve → call → reconcile →
+strict validation, exactly one verdict per turn, reasoning fallback;
+max_tokens 6000 because reasoning burn emptied content at 1600). The
+classifier never decides what to remember. Deterministic transition
+detection then finds:
+
+- **milestone** — neutral → pleased
+- **recovery** — displeased → pleased
+- **regression** — pleased → displeased
+- **unresolved** — displeased run that lasts to session end
+
+Observed cost: ~$0.018 for a 24-turn session. Finding: Codex usage is mostly
+one-prompt-per-session, so arcs live in Hermes conversations.
+
+### 18. Hermes adapter + attribution + HISTORY.md — `src/hermes-adapter.ts`, `src/hermes-attribution.ts`, `src/marker-records.ts`, `src/history-renderer.ts`
+
+`bun scripts/hermes-capture.ts` reads the Hermes session store (`state.db`)
+and queues satisfaction jobs, incremental by session id + last message id.
+Hermes chats carry no cwd, so run-07 found 45/47 marker records landing in
+`projects/unknown`. Attribution resolves sessions to projects via an
+operator-curated longest-prefix map (`live-run/hermes-project-map.json`);
+cwd always wins; unmapped stays honestly `unknown`, never guessed.
+
+Each transition becomes a marker record (kind `attempt`, proposed/tentative,
+the user's own turns quoted — no invention), written via the normal writer.
+`session-start.ts` renders them chronologically into
+`<project>/.project-memory/HISTORY.md` next to BRIEFING.md.
+Known limit: markers record *when* the user reacted, not *what* was learned;
+most entries are quote fragments, and dates are capture dates.
+
+### 19. Public export architecture
+
+This repository is maintained as a clean, sanitized export of the research system:
+username rewritten to `Users/dev` preserving path structure (test fixtures
+depend on it), private session-derived data and personal notes excluded,
+run-08 raw data included with 13 automated evidence verification tests (`tests-run08/`).
+All 122 unit tests and 13 evidence tests pass in this export.
 
 ## Where everything physically lives
 
-- Repo: `C:\Users/dev\Development\Local\dual-brain-memory`
-  (private GitHub: mohamedswe/dual-brain-memory)
-- The brain (disposable): `live-run/brain.pglite` — 270 records
-  (112 active, 158 superseded) + project pages + belongs_to/supersedes edges
-- Budget ledger: `live-run/ledger.db` — ~$6.85 spent of the $10 monthly cap
-- Briefing (software-auditor):
-  `C:\Users/dev\~/Desktop\software-auditor\.hermes-memory\BRIEFING.md`
-- Codex wiring: `C:\Users/dev\.codex\AGENTS.md` (backup: AGENTS.md.bak)
-- Original design: `C:\Users/dev\.hermes\plans\2026-10-03_013735-dual-brain-memory-design.md`
-- Tests: 61 across 18 files — run with `npm run test`
+- Repo: `https://github.com/mohamedswe/agent-memory-gate`
+- The brain (disposable): `live-run/brain.pglite` — 371 records
+  (213 active, 158 superseded) + project pages + belongs_to/supersedes edges
+- Budget ledger: `live-run/ledger.db` — $7.32 spent of the $10 October cap
+  (983 reservations, 0 held)
+- Capture state: `live-run/capture-cursor.json`, `hermes-capture-cursor.json`,
+  `cross-session-ledger.json`, `capture-queue.jsonl`,
+  `satisfaction-verdicts.jsonl`, `queue-review-report.jsonl`
+- Briefings: `<project>/.project-memory/BRIEFING.md` + `HISTORY.md` for
+  software-auditor (58 procedures), Insectflux-dev (28), emara-release,
+  dual-brain-memory
+- Codex wiring: `~/.codex/AGENTS.md`
+- Original design: `~/.hermes/plans/2026-10-03_013735-dual-brain-memory-design.md`
+- Tests: 122 across 27 files — run with `bun run test`
 
 ## Operating manual (the commands)
 
-- Generate a briefing: `bun scripts/session-start.ts <project-dir>`
+- Generate a briefing + history: `bun scripts/session-start.ts <project-dir>`
 - View it: `bun scripts/session-start.ts <project-dir> --stdout`
 - Inventory all memories: `bun scripts/inventory.ts`
 - Count active vs superseded: `bun scripts/count-active.ts`
@@ -199,42 +284,46 @@ Re-runs are idempotent. First live run: 4 candidates → 1 saved
 - Full backfill (paid, legacy): `bun scripts/live-backfill.ts`
 - Retry failures (paid, legacy): `bun scripts/live-retry.ts`
 - Condense (paid): `bun scripts/live-condense.ts`, then `...-retry.ts`
-- **Capture new sessions (free, deterministic): `bun scripts/session-capture.ts`**
-  — incremental; only sessions not in the cursor. `--dry-run` to preview.
+- **Capture new Codex sessions (free, deterministic): `bun scripts/session-capture.ts`**
+  — incremental; lanes 1a + 1b + satisfaction jobs. `--dry-run` to preview.
   `--baseline <iso-date>` adopts a pre-existing corpus without queuing.
-- **Push the queue through the reviewer (paid, per-run go): `bun scripts/queue-review.ts`**
+- **Capture Hermes sessions (free): `bun scripts/hermes-capture.ts`**
+  — `--session <id-prefix>` for one session, `--dry-run` to preview.
+- **Push the queue through the paid stages (per-run go): `bun scripts/queue-review.ts`**
   — `--dry-run` first; `--limit N` to bound spend. Throttled 1.5s/call.
 - Eval tooling: `bun scripts/eval-score.ts <rollouts...>` (token/tool/time
   comparison), `bun scripts/eval-collect.ts <run-dir> [since-days]` (archive
-  rollouts + events dumps + index.json into the eval run dir)
-- Run the tests: `npm run test`
+  rollouts + events dumps + index.json into the eval run dir),
+  `python scripts/setup-memory-eval.py` (paired workspaces; `--flat`, `--with-deps`)
+- Run the tests: `bun run test`
 
 ## What is NOT built (honest boundaries)
 
-1. ~~**It's a snapshot, not a cycle.**~~ The session-end capture lane is
-   BUILT (2026-10-11): `bun scripts/session-capture.ts` walks new sessions
-   incrementally (cursor at `live-run/capture-cursor.json`), queues redacted
-   candidates to `live-run/capture-queue.jsonl`, and `bun scripts/queue-review.ts`
-   pushes them through the paid reviewer into the brain (manual per-run go).
-   The cycle is closed, but capture does not run automatically — it is a
-   command, not a daemon (deliberate).
+1. **Capture is a command, not a daemon** (deliberate). Review stays a manual,
+   per-run paid go.
 2. **The disposable brain is not Codex's real brain.** `~/.codex/gbrain/`
    is untouched. Migration is a separate explicit authorization.
-3. **Hermes side is unbuilt.** No Hermes capture loop, no cross-brain reads
-   exercised (the contract supports them; nothing uses them yet).
+3. **No cross-brain reads exercised.** The contract supports them; nothing
+   uses them yet. Hermes capture exists (stage 18) but only feeds lane 2.
 4. **No embeddings.** Paraphrase duplicates without shared commands/paths
-   remain (~30 of the 112 actives).
-5. **The history lane is unbuilt.** Repetition can only surface procedures.
-   Decisions, failed attempts, "what happened over the project" need
-   session-level review (once-but-critical knowledge).
+   remain; cross-session matching is exact-string.
+5. **Once-but-critical knowledge is still mostly missed.** Lane 2 marks
+   *when* something mattered, not *what* was learned. Turning transitions
+   into decision / failed-attempt / correction records is the open step —
+   and the fix for one-pass starvation.
 6. **No transport/auth.** In-process trusted identities only; no network
    service is exposed. PGLite is single-process by nature.
 7. Loose ends: 2 condense clusters still failing (docker-compose, build:graph);
-   budget reset convention undecided (~$3.13 remaining of the October cap).
+   5 reasoning-burn NO_CONTENT retryables; budget reset convention undecided
+   (~$2.68 remaining of the October cap).
 
 ## The cost model (observed)
 
-- Reviewer backfill: ~$0.002-0.05 per candidate (reasoning tokens dominate)
+- Reviewer: ~$0.002-0.05 per candidate (reasoning tokens dominate)
+- Satisfaction classifier: ~$0.02 per multi-turn session (one batched call)
 - Condense: ~$0.003 per cluster
-- Everything deterministic (ledger, redaction, clustering, briefing): free
-- Full corpus so far: $6.85 of $10 monthly cap
+- Everything deterministic (ledgers, filters, redaction, clustering,
+  attribution, rendering): free
+- Everything so far: $7.32 of $10 monthly cap
+- For contrast (run-08): A-MEM pays ~1,100 write tokens per note,
+  unconditionally

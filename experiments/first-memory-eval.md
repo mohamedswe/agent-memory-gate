@@ -22,7 +22,7 @@ From the `dual-brain-memory` repo, choose a NEW out directory each time:
 ```bash
 python3 scripts/setup-memory-eval.py \
   --repo C:/Users/dev/Development/GitHub/software-auditor \
-  --briefing C:/Users/dev/~/Desktop/software-auditor/.hermes-memory/BRIEFING.md \
+  --briefing ~/Desktop/software-auditor/.hermes-memory/BRIEFING.md \
   --out .eval-local/run-02
 ```
 

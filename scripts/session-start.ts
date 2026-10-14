@@ -3,11 +3,9 @@
  * renders the active memories for that project as a compact briefing Codex
  * (or any agent) can load at session start.
  *
- * Location: C:\Users/dev\Development\Local\dual-brain-memory\scripts\session-start.ts
- *
  * Usage:
- *   bun C:/Users/dev/Development/Local/dual-brain-memory/scripts/session-start.ts <project-dir>
- *   bun C:/Users/dev/Development/Local/dual-brain-memory/scripts/session-start.ts <project-dir> --stdout
+ *   bun scripts/session-start.ts <project-dir>
+ *   bun scripts/session-start.ts <project-dir> --stdout
  *
  * Default: writes the briefing to <project-dir>/.project-memory/BRIEFING.md
  * (relative to the target project, NOT this repo) and prints the path.
