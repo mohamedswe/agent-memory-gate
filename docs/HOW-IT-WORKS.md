@@ -242,21 +242,22 @@ Hermes chats carry no cwd, so run-07 found 45/47 marker records landing in
 operator-curated longest-prefix map (`live-run/hermes-project-map.json`);
 cwd always wins; unmapped stays honestly `unknown`, never guessed.
 
-Each transition becomes a marker record (kind `attempt`, proposed/tentative,
-the user's own turns quoted — no invention), written via the normal writer.
-`session-start.ts` renders them chronologically into
-`<project>/.project-memory/HISTORY.md` next to BRIEFING.md.
-Known limit: markers record *when* the user reacted, not *what* was learned;
-most entries are quote fragments, and dates are capture dates.
+Each transition becomes a transition candidate (`buildTransitionCandidate`),
+which is audited by the budget-gated Reviewer LLM (`callReviewer`): if it
+contains a reusable technical lesson, decision, or blocker, it is synthesized
+into a marker record (kind `attempt`, proposed/tentative) and written via the
+normal writer; if it is generic conversational approval, the reviewer returns
+`NOT_WORTH_SAVING` and drops it. `session-start.ts` renders saved markers
+chronologically into `<project>/.project-memory/HISTORY.md` next to
+`BRIEFING.md`.
 
 ### 19. Public export architecture
 
 This repository is maintained as a clean, sanitized export of the research system:
 username rewritten to `Users/dev` preserving path structure (test fixtures
 depend on it), private session-derived data and personal notes excluded,
-run-08 raw data included with 13 automated evidence verification tests (`tests-run08/`).
-All 122 unit tests and 13 evidence tests pass in this export.
-
+run-08 raw data included with 14 automated evidence verification tests (`tests-run08/`).
+All 123 unit tests and 14 evidence tests pass in this export.
 ## Where everything physically lives
 
 - Repo: `https://github.com/mohamedswe/agent-memory-gate`
@@ -272,7 +273,7 @@ All 122 unit tests and 13 evidence tests pass in this export.
   dual-brain-memory
 - Codex wiring: `~/.codex/AGENTS.md`
 - Original design: `~/.hermes/plans/2026-10-03_013735-dual-brain-memory-design.md`
-- Tests: 122 across 27 files — run with `bun run test`
+- Tests: 123 across 27 files — run with `bun run test`
 
 ## Operating manual (the commands)
 

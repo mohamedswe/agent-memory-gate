@@ -89,7 +89,7 @@ export async function projectBriefing(engine: EngineWithGraph, checkoutPath: str
     const rec = recordPage?.frontmatter?.record;
     if (rec) {
       records.push({
-        slug: bl.from,
+        slug: bl.from_slug,
         kind: rec.kind, content: rec.content,
         lifecycle: rec.lifecycle, evidence: rec.evidence, currency: rec.currency,
       });

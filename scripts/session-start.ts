@@ -28,13 +28,13 @@ const { configureGateway } = await import(fwd(join(vendor, 'src/core/ai/gateway.
 configureGateway({ embedding_model: 'openai:text-embedding-3-large', embedding_dimensions: 1536, env: {} });
 const { PGLiteEngine } = await import(fwd(join(vendor, 'src/core/pglite-engine.ts')));
 
-const BRAIN_PATH = join(homedir(), 'Development', 'Local', 'dual-brain-memory', 'live-run', 'brain.pglite');
+const BRAIN_PATH = process.env.BRAIN_PATH ?? join('live-run', 'brain.pglite');
 const engine = new PGLiteEngine();
 await engine.connect({ database_path: BRAIN_PATH });
 await engine.initSchema();
 
 // Load this project's active records via the belongs_to graph:
-const { projectSlugFor } = await import(fwd(join(homedir(), 'Development', 'Local', 'dual-brain-memory', 'src', 'project-registry.ts').replace(String.fromCharCode(92), '/')));
+const { projectSlugFor } = await import('../src/project-registry');
 const slug = projectSlugFor(targetDir);
 const projectPage = await engine.getPage(slug, { sourceId: 'default' });
 if (!projectPage) {
@@ -69,7 +69,7 @@ const lines = [
 const briefing = lines.join('\n');
 
 // HISTORY.md — the marker lane (satisfaction transitions), alongside the briefing.
-const { renderHistoryMarkdown } = await import(fwd(join(homedir(), 'Development', 'Local', 'dual-brain-memory', 'src', 'history-renderer.ts').replace(String.fromCharCode(92), '/')));
+const { renderHistoryMarkdown } = await import('../src/history-renderer');
 const history = renderHistoryMarkdown(slug, actives.map(a => ({
   kind: a.kind, content: a.content,
   createdAt: a.createdAt ?? '', sessionFile: a.sourceSession ?? 'unknown',

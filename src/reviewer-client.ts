@@ -49,17 +49,21 @@ function projectNameFor(projectDir: string): string {
 
 export function buildUserPrompt(candidate: Candidate): string {
   const c = candidate.counts;
-  const signal = c.userRepeats >= 2 ? 'user repeated this statement' : 'agent repeated this action';
+  const signal = candidate.key.startsWith('satisfaction:')
+    ? 'user satisfaction transition arc'
+    : c.userRepeats >= 2
+      ? 'user repeated this statement'
+      : 'agent repeated this action';
   return [
     `Project: ${projectNameFor(candidate.projectDir)}`,
     `Project directory: ${candidate.projectDir}`,
     `Session: ${candidate.sessionFile}`,
     `Signal type: ${signal}`,
     `Usage counts: userRepeats=${c.userRepeats}, agentRediscoveries=${c.agentRediscoveries}, rawMentions=${c.rawMentions}`,
-    `Repeated signal:`,
+    `Signal payload:`,
     candidate.key.slice(0, 500),
     ``,
-    `Scope your content to this project ("In <project>: ..." or equivalent) so the memory carries its context. Never invent project details you cannot see here.`,
+    `Scope your content to this project ("In <project>: ..." or equivalent) so the memory carries its context. If this is a satisfaction transition arc with no reusable technical lesson, decision, or blocker (e.g., generic chat approval), reply with content "NOT_WORTH_SAVING" and memory_kind "evidence". Never invent project details you cannot see here.`,
   ].join('\n');
 }
 

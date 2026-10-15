@@ -1,4 +1,4 @@
 Clean public export of a private research repo.
-Source commit: 697235cdaf8ddc7759bb3908d31a7ad17e6c4115
+Source commit: fc7b04437d05712ab5ab9879035ba5fac2003f5a
 Exported: 2026-10-14
 Personal paths rewritten to ~/; private session data excluded.

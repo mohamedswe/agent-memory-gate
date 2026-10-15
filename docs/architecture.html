@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dual-Brain Memory Architecture</title>
+  <title>Agent Memory Gate — Architecture</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,9 +64,9 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>Dual-Brain Memory Architecture</h1>
+        <h1>Agent Memory Gate Architecture</h1>
       </div>
-      <p class="subtitle">session capture &rarr; signal extraction &rarr; paid review &rarr; graph storage &rarr; briefing retrieval &mdash; mohamedswe/dual-brain-memory</p>
+      <p class="subtitle">session capture &rarr; dual-signal extraction (repetition + satisfaction transitions) &rarr; budget-gated review &rarr; graph storage &rarr; briefing retrieval &mdash; mohamedswe/agent-memory-gate</p>
     </div>
 
     <div class="diagram-container">
@@ -142,7 +142,7 @@
         <text x="115" y="433" fill="#94a3b8" font-size="7" text-anchor="middle">reconcile actual usage.cost</text>
         <text x="115" y="444" fill="#94a3b8" font-size="7" text-anchor="middle">ambiguous failure holds reservation</text>
         <text x="115" y="455" fill="#94a3b8" font-size="7" text-anchor="middle">retry needs NEW key (no free replays)</text>
-        <text x="115" y="470" fill="#fbbf24" font-size="7" text-anchor="middle">$10/mo cap &middot; $6.85 spent &middot; cap never overshot</text>
+        <text x="115" y="470" fill="#fbbf24" font-size="7" text-anchor="middle">$10/mo cap &middot; $7.32 spent &middot; cap never overshot</text>
         <text x="115" y="482" fill="#94a3b8" font-size="7" text-anchor="middle">month rollover, history retained</text>
 
         <!-- ============ REVIEWER ============ -->
@@ -192,8 +192,8 @@
         <text x="1065" y="603" fill="white" font-size="11" font-weight="600" text-anchor="middle">Disposable Brain</text>
         <text x="1065" y="619" fill="#94a3b8" font-size="8" text-anchor="middle">live-run/brain.pglite</text>
         <text x="1065" y="632" fill="#a78bfa" font-size="7" text-anchor="middle">G-brain PGLite engine</text>
-        <text x="1065" y="648" fill="#94a3b8" font-size="7" text-anchor="middle">records/&lt;uuid&gt; pages &middot; 270 total</text>
-        <text x="1065" y="659" fill="#94a3b8" font-size="7" text-anchor="middle">112 active / 158 superseded</text>
+        <text x="1065" y="648" fill="#94a3b8" font-size="7" text-anchor="middle">records/&lt;uuid&gt; pages &middot; 371 total</text>
+        <text x="1065" y="659" fill="#94a3b8" font-size="7" text-anchor="middle">213 active / 158 superseded</text>
         <text x="1065" y="673" fill="#94a3b8" font-size="7" text-anchor="middle">projects/&lt;name&gt; Project nodes</text>
         <text x="1065" y="684" fill="#94a3b8" font-size="7" text-anchor="middle">typed links table</text>
         <text x="1065" y="698" fill="#a78bfa" font-size="7" text-anchor="middle">belongs_to edges: record&rarr;project</text>
@@ -218,7 +218,7 @@
         <text x="130" y="849" fill="#94a3b8" font-size="8" text-anchor="middle">projectBriefing() + session-start.ts</text>
         <text x="130" y="862" fill="#94a3b8" font-size="7" text-anchor="middle">graph walk: project &rarr; backlinks</text>
         <text x="130" y="873" fill="#94a3b8" font-size="7" text-anchor="middle">currency=active only</text>
-        <text x="130" y="884" fill="#22d3ee" font-size="7" text-anchor="middle">&lt;project&gt;/.hermes-memory/BRIEFING.md</text>
+        <text x="130" y="884" fill="#22d3ee" font-size="7" text-anchor="middle">&lt;project&gt;/.project-memory/BRIEFING.md + HISTORY.md</text>
 
         <!-- ============ FRESH CODEX SESSION ============ -->
         <rect x="300" y="810" width="180" height="90" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
@@ -228,13 +228,13 @@
         <text x="390" y="875" fill="#22d3ee" font-size="7" text-anchor="middle">acceptance passed 2026-10-08:</text>
         <text x="390" y="887" fill="#22d3ee" font-size="7" text-anchor="middle">answered "how to run tests" from memory</text>
 
-        <!-- ============ UNBUILT (dashed, grayed) ============ -->
-        <rect x="540" y="810" width="200" height="90" rx="6" fill="rgba(30, 41, 59, 0.3)" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-        <text x="640" y="833" fill="#94a3b8" font-size="11" font-weight="600" text-anchor="middle">Unbuilt (named, deferred)</text>
-        <text x="640" y="849" fill="#64748b" font-size="7" text-anchor="middle">session-end capture lane (cycle &rarr; snapshot)</text>
-        <text x="640" y="860" fill="#64748b" font-size="7" text-anchor="middle">live-brain migration (separate authorization)</text>
-        <text x="640" y="871" fill="#64748b" font-size="7" text-anchor="middle">Hermes side + cross-brain reads</text>
-        <text x="640" y="882" fill="#64748b" font-size="7" text-anchor="middle">embeddings &middot; session-history lane</text>
+        <!-- ============ LANE 2 & 1B ============ -->
+        <rect x="540" y="810" width="200" height="90" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="640" y="833" fill="white" font-size="11" font-weight="600" text-anchor="middle">Lanes 1b &amp; 2 (Built)</text>
+        <text x="640" y="849" fill="#94a3b8" font-size="7" text-anchor="middle">cross-session-ledger.ts (&ge;2 sessions)</text>
+        <text x="640" y="860" fill="#94a3b8" font-size="7" text-anchor="middle">satisfaction-classifier.ts + transitions</text>
+        <text x="640" y="871" fill="#94a3b8" font-size="7" text-anchor="middle">hermes-adapter.ts + attribution</text>
+        <text x="640" y="882" fill="#34d399" font-size="7" text-anchor="middle">history-renderer.ts &rarr; HISTORY.md</text>
 
         <!-- ================= ARROWS ================= -->
         <!-- capture lane -->
@@ -330,7 +330,7 @@
           <li>&bull; reserve before request; refusal = no HTTP call</li>
           <li>&bull; reconcile actual cost; failed tokens still billed</li>
           <li>&bull; ambiguous failure holds the reservation</li>
-          <li>&bull; $10/mo cap, $6.85 spent, never overshot</li>
+          <li>&bull; $10/mo cap, $7.32 spent, never overshot</li>
         </ul>
       </div>
       <div class="card">
@@ -348,7 +348,7 @@
     </div>
 
     <p class="footer">
-      dual-brain-memory &bull; 51 tests green &bull; acceptance passed 2026-10-08 &bull; source: docs/HOW-IT-WORKS.md
+      agent-memory-gate &bull; 123 tests green &bull; 13 evidence tests green &bull; source: docs/HOW-IT-WORKS.md
     </p>
   </div>
 </body>

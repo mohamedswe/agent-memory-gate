@@ -23,6 +23,10 @@ DOC = open(
     os.path.join(ROOT, "experiments", "run-08-a-mem-baseline.md"),
     encoding="utf-8",
 ).read()
+README = open(
+    os.path.join(ROOT, "README.md"),
+    encoding="utf-8",
+).read()
 
 
 # --- corpus shape ---
@@ -64,7 +68,7 @@ def test_amem_per_note_figure():
     assert abs((n["prompt"] + n["completion"]) / 12 - 1095.6) < 0.1
 
 
-def test_amem_corpus_b_cost_6375():
+def test_amem_corpus_b_cost_5611():
     b = [x for x in AMEM["notes"] if x["id"].startswith("op-")]
     assert len(b) == 4
     assert sum(x["prompt_tokens"] + x["completion_tokens"] for x in b) == 5611
@@ -110,3 +114,11 @@ def test_doc_quotes_amem_totals():
 def test_doc_states_honest_limitations():
     assert "analyze_content" in DOC
     assert "n=1 corpus" in DOC or "n = 1 corpus" in DOC
+
+
+def test_readme_quotes_verified_run08_figures():
+    assert "13,147" in README
+    assert "11" in README
+    assert "5/7" in README or "5 / 7" in README
+    assert "7/7" in README or "7 / 7" in README
+

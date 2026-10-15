@@ -14,6 +14,7 @@
  */
 import type { SatisfactionTransition } from './satisfaction-transitions';
 import type { ReviewerOutput } from './reviewer-output';
+import type { Candidate } from './redaction-gate';
 import type { UserTurn } from './session-trajectory';
 
 export interface MarkerContext {
@@ -50,6 +51,27 @@ function quoteTurns(ctx: MarkerContext, budget: number): string {
     parts.push(part);
   }
   return parts.join(' | ');
+}
+
+/**
+ * Build a promotion Candidate from a detected satisfaction transition so the
+ * budget-gated Reviewer LLM can judge whether the transition contains durable
+ * project knowledge (and return NOT_WORTH_SAVING if it is just conversational
+ * noise).
+ */
+export function buildTransitionCandidate(ctx: MarkerContext): Candidate {
+  const kind = KIND_LABEL[ctx.transition.kind];
+  const quoted = quoteTurns(ctx, 400);
+  return {
+    sessionFile: ctx.sessionFile,
+    projectDir: ctx.projectDir,
+    key: `satisfaction:${ctx.transition.kind}:${ctx.transition.fromIndex}-${ctx.transition.toIndex}: ${kind}: ${quoted}`,
+    counts: {
+      userRepeats: 0,
+      agentRediscoveries: 0,
+      rawMentions: Math.max(1, ctx.transition.toIndex - ctx.transition.fromIndex + 1),
+    },
+  };
 }
 
 export function renderMarkerRecord(ctx: MarkerContext): ReviewerOutput {

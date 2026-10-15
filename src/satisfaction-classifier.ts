@@ -86,7 +86,7 @@ export async function classifySatisfaction(
   batchKey: string,
   job: SatisfactionJob,
   deps: SatisfactionDeps,
-): SatisfactionResult {
+): Promise<SatisfactionResult> {
   // 1. Reserve BEFORE the request. Refusal = no HTTP call.
   const estimate = deps.estimateUsd();
   const reservation = deps.budget.reserve(batchKey, estimate);

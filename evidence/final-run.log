@@ -1,29 +1,193 @@
 bun test v1.4.2 (744846f84)
 
+test\budget-ledger.test.ts:
+(pass) reserves atomically and reconciles actual cost [24.98ms]
+(pass) cannot over-reserve past the cap, including concurrently [33.29ms]
+(pass) ambiguous failure keeps the reservation held (no free retries) [21.34ms]
+(pass) reservations persist across restart (durable ledger) [16.95ms]
+(pass) month rollover: new period starts fresh, history retained [22.98ms]
+
+test\candidate-writer.test.ts:
+  Setting up brain schema (v146)...
+  141 migration(s) applied
+(pass) writer creates an honest tentative proposed record with candidate provenance [25.99ms]
+(pass) writer rejects malformed reviewer output before touching the brain [3.52ms]
+
+test\capture-cursor.test.ts:
+(pass) a fresh cursor has no processed files and an empty queue pointer [12.56ms]
+(pass) markProcessed persists identity by path+mtime+size and survives reload [15.64ms]
+(pass) a modified file (mtime or size changed) is NOT processed anymore [7.70ms]
+(pass) markProcessed is idempotent for the same identity [7.64ms]
+(pass) a missing file is never reported processed [1.39ms]
+(pass) clear() empties the cursor durably [16.47ms]
+(pass) cursorPath helper resolves under its store dir [0.12ms]
+
+test\condense-cluster.test.ts:
+(pass) typecheck variants cluster together; distinct commands stay apart [0.45ms]
+(pass) graphify doc variants cluster by shared path [0.17ms]
+(pass) singletons pass through as singleton clusters [0.05ms]
+(pass) same content in different projects never clusters together [0.06ms]
+
+test\cross-session-ledger.test.ts:
+(pass) a key seen once in each of two DIFFERENT sessions (same project) crosses the threshold [5.04ms]
+(pass) the same session observed twice does NOT double count (idempotent session sets) [3.89ms]
+(pass) counts are scoped per project — the same key in another project does not bleed [4.76ms]
+(pass) markPromoted prevents re-queuing forever [6.99ms]
+(pass) ledger state survives reload (durable) [18.85ms]
+(pass) sessionCount reports the distinct-session count for provenance [4.93ms]
+(pass) a corrupt ledger file falls back to fresh (fail-open to re-observe) [14.90ms]
+
+test\hermes-adapter.test.ts:
+(pass) extractHermesTrajectory keeps ONLY user messages, in id order, as turns [0.33ms]
+(pass) assistant and tool rows never appear as turns [0.14ms]
+(pass) empty and whitespace-only user rows are skipped [0.09ms]
+(pass) an all-empty row set yields an empty trajectory (no job downstream) [0.05ms]
+(pass) hermes out-of-band steering markers in user content are not excluded (they ARE the user voice) [0.05ms]
+
+test\hermes-attribution.test.ts:
+(pass) an explicit session-id prefix match resolves the project [0.17ms]
+(pass) a cwd always wins over the map (real workspace identity beats curated data) [0.03ms]
+(pass) unmapped sessions with no cwd resolve to null — honest unknown, never guessed [0.03ms]
+(pass) a null/empty map behaves like no map [0.04ms]
+(pass) session ids are matched by longest prefix to avoid collisions [0.05ms]
+
+test\history-renderer.test.ts:
+(pass) history renders marker records (attempt kind) as a chronological list [0.23ms]
+(pass) procedures are NOT included — history is the marker lane only [0.04ms]
+(pass) entries are ordered newest-first with session provenance [0.05ms]
+(pass) dates are rendered human-readable per entry [0.07ms]
+(pass) attempt-kind records without the satisfaction substring also render (agent-observed failures) [0.04ms]
+(pass) procedures still excluded even though they are records [0.03ms]
+(pass) an empty marker set renders an honest empty history [0.02ms]
+
+test\ledger-args-serialization.test.ts:
+(pass) nested tool args serialize to distinct, stable keys [0.65ms]
+(pass) key order in nested args does not create false distinct keys [0.25ms]
+
+test\ledger-min-content.test.ts:
+(pass) low-content keys are counted but never promoted [0.15ms]
+(pass) meaningful short statements still promote [0.05ms]
+
+test\marker-records.test.ts:
+(pass) milestone marker renders attempt-kind record scoped to the project [0.27ms]
+(pass) record content embeds the milestone turn text (no invention) [0.04ms]
+(pass) recovery marker renders with failure context (the displeased turns) included [0.06ms]
+(pass) regression marker names the regression explicitly [0.04ms]
+(pass) unresolved marker renders the open failure honestly [0.04ms]
+(pass) long turn texts are truncated so content stays under the 300-char record contract [0.04ms]
+(pass) justification states the signal source (satisfaction transition) for auditability [0.03ms]
+(pass) buildTransitionCandidate formats a satisfaction transition for the Reviewer LLM gate [0.56ms]
+
+test\project-registry.test.ts:
+  Setting up brain schema (v146)...
+  141 migration(s) applied
+(pass) same checkout path maps to one stable project id; different paths stay distinct [15.31ms]
+(pass) writer v2 creates the record WITH projectId and a real belongs_to edge [14.39ms]
+(pass) projectBriefing packs the project orientation and its linked records [15.77ms]
+
 test\record-boundary.test.ts:
   Setting up brain schema (v146)...
   141 migration(s) applied
-(pass) create snapshots nested input before yielding to the database [11.64ms]
+(pass) create snapshots nested input before yielding to the database [8.92ms]
 
 test\records.test.ts:
   Setting up brain schema (v146)...
   141 migration(s) applied
   Setting up brain schema (v146)...
   141 migration(s) applied
-(pass) owned records round-trip through separate real page stores [18.94ms]
-(pass) cross-brain reads require both opt-ins and expose only a safe projection [51.48ms]
-(pass) immutable create conflicts even across service wrappers and concurrent requests [12.75ms]
-(pass) only the two known identities can own a service or call its API [23.31ms]
-(pass) malformed records are rejected without touching the page store [17.12ms]
-(pass) verified requires evidence pointers and a verification timestamp, not a truth guarantee [6.31ms]
-(pass) cross-owner writes are denied before any page mutation [2.44ms]
+(pass) owned records round-trip through separate real page stores [22.29ms]
+(pass) cross-brain reads require both opt-ins and expose only a safe projection [56.20ms]
+(pass) immutable create conflicts even across service wrappers and concurrent requests [10.26ms]
+(pass) only the two known identities can own a service or call its API [18.99ms]
+(pass) malformed records are rejected without touching the page store [22.03ms]
+(pass) verified requires evidence pointers and a verification timestamp, not a truth guarantee [7.60ms]
+(pass) cross-owner writes are denied before any page mutation [3.10ms]
+
+test\redaction-gate.test.ts:
+(pass) secret-shaped candidates are excluded, clean ones pass through [0.42ms]
+(pass) wait-call candidates are excluded by default category filter [0.07ms]
+(pass) wait-calls pass when category filter is disabled [0.06ms]
+
+test\reviewer-client.test.ts:
+(pass) happy path: reserve -> call -> reconcile with actual cost [0.50ms]
+(pass) refusal at the cap: no HTTP call is made [0.36ms]
+(pass) ambiguous HTTP failure keeps the reservation held (no reconcile, no free retry) [0.45ms]
+(pass) malformed model JSON is rejected and cost still reconciled [0.26ms]
+(pass) reviewer claiming verified is rejected downstream by the validator contract [0.27ms]
+
+test\reviewer-output.test.ts:
+(pass) valid reviewer output passes and is never verified/implemented [0.09ms]
+(pass) malformed reviewer output is rejected, not repaired [0.19ms]
+(pass) justification and content are bounded [0.06ms]
+
+test\reviewer-prompt-v2.test.ts:
+(pass) the reviewer prompt includes project name, session, signal type, and counts [0.06ms]
+(pass) prompt instructs the reviewer to scope content to the project [0.05ms]
+
+test\reviewer-reasoning-fallback.test.ts:
+(pass) empty content falls back to reasoning_content and extracts JSON [0.40ms]
+(pass) fenced JSON in reasoning_content is extracted [0.11ms]
+(pass) both fields empty still fails honestly [0.06ms]
+
+test\rollout-reader.test.ts:
+(pass) parses a synthetic rollout into typed events, ignoring wrapper duplicates [0.57ms]
+(pass) feeding the ledger from a parsed rollout produces the expected candidates [0.26ms]
+(pass) a partial trailing line is skipped without error [0.16ms]
+(pass) duplicated response_item lines are deduplicated by id [0.12ms]
+
+test\satisfaction-arcs.test.ts:
+(pass) a displeased -> pleased sequence is a resolved arc spanning those turns [0.13ms]
+(pass) displeasure that never resolves is an unresolved arc to the last turn [0.04ms]
+(pass) pleased with no prior displeasure is not an arc (routine success) [0.02ms]
+(pass) a second displeased after a resolved arc starts a NEW arc [0.04ms]
+(pass) all-neutral sessions produce no arcs [0.13ms]
+(pass) pleased turns INSIDE an arc do not close it — only a pleased AFTER displeasure resolves [0.03ms]
+(pass) empty verdict list produces no arcs [0.01ms]
+
+test\satisfaction-classifier.test.ts:
+(pass) buildSatisfactionPrompt embeds every turn text in order with indices [0.14ms]
+(pass) classifySatisfaction returns per-turn verdicts for a valid response [0.68ms]
+(pass) verdicts may only be neutral/pleased/displeased — anything else is rejected [0.29ms]
+(pass) every turn must have exactly one verdict — missing or duplicate indices are rejected [0.23ms]
+(pass) budget refusal means NO http call happens [0.18ms]
+(pass) HTTP failure reconciles cost (if reported) then rejects [0.18ms]
+(pass) empty content with valid JSON in reasoning_content is recovered (same fallback as reviewer) [0.21ms]
+
+test\satisfaction-transitions.test.ts:
+(pass) neutral -> pleased is a milestone transition [0.12ms]
+(pass) displeased -> pleased is a recovery transition [0.04ms]
+(pass) pleased -> displeased is a regression transition [0.08ms]
+(pass) same-state consecutive turns produce no transition [0.03ms]
+(pass) a pleased FIRST turn with nothing before it is not a transition [0.02ms]
+(pass) displeasure never resolved by session end is reported as an unresolved issue [0.04ms]
+(pass) a recovery closes the displeased run — later displeasure is a new run [0.21ms]
+(pass) the real shape from this session: neutral run then two pleased at the end -> one milestone [0.35ms]
+(pass) empty verdicts produce nothing [0.03ms]
 
 test\schema.test.ts:
-(pass) local manifest exists and is accepted by the real Gbrain JSON loader and parser [10.01ms]
-(pass) declares exactly the seven graph page types [0.83ms]
-(pass) declares exactly the seven relationship verbs with inverses [0.51ms]
+(pass) local manifest exists and is accepted by the real Gbrain JSON loader and parser [6.90ms]
+(pass) declares exactly the seven graph page types [0.65ms]
+(pass) declares exactly the seven relationship verbs with inverses [0.40ms]
 
- 11 pass
+test\session-capture.test.ts:
+(pass) captureSession extracts, redacts, and queues candidates without brain or network [4.37ms]
+(pass) captureSession excludes secret-shaped candidates fail-closed with a reason [4.31ms]
+(pass) captureSession on a rollout with no repeats queues nothing [3.57ms]
+
+test\session-trajectory.test.ts:
+(pass) extractUserTurns returns ONLY user messages in order, indexed, assistant messages excluded [0.43ms]
+(pass) extractUserTurns with zero user messages returns an empty turn list, not an error [0.07ms]
+(pass) buildSatisfactionJob produces a queue line with job kind, session identity, and the full turn payload [0.15ms]
+(pass) buildSatisfactionJob on an empty trajectory returns null (no paid call for sessions with no user turns) [0.06ms]
+(pass) system-injected turns (environment_context, AGENTS.md instructions) are excluded from the trajectory [0.13ms]
+(pass) a session whose only user turns are injected gets NO satisfaction job [0.08ms]
+(pass) trailing partial line is tolerated by extractUserTurns [0.10ms]
+
+test\usage-ledger.test.ts:
+(pass) normalization folds case, punctuation, and whitespace variants into one key [0.27ms]
+(pass) distinct keys stay distinct and counts never bleed [0.16ms]
+
+ 123 pass
  0 fail
- 138 expect() calls
-Ran 11 tests across 3 files. [6.76s]
+ 448 expect() calls
+Ran 123 tests across 27 files. [14.48s]

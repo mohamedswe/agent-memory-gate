@@ -4,7 +4,7 @@
 
 `agent-memory-gate` is an experimental memory architecture for autonomous coding agents that eliminates LLM-judged salience at write time. Instead of invoking a language model to extract or score memories during ingestion, candidate procedures are promoted strictly when the agent's observed execution patterns repeat across sessions ($\ge 2$ occurrences). All downstream LLM consolidation sits behind a deterministic, fail-closed SQLite budget ledger. The resulting memory state is rendered as a static per-project briefing (`BRIEFING.md` and `HISTORY.md`) consumed at session initialization.
 
-This repository contains the deterministic ingestion and gating pipeline (22 modules, 122 unit and invariant tests), raw evaluation logs across an eight-run experimental series (including null results), and a controlled baseline comparison against A-MEM (NeurIPS 2025).
+This repository contains the deterministic ingestion and gating pipeline (22 modules, 123 unit and invariant tests), raw evaluation logs across an eight-run experimental series (including null results), and a controlled baseline comparison against A-MEM (NeurIPS 2025).
 
 ---
 
@@ -113,14 +113,14 @@ bun install -g github:garrytan/gbrain#latest-stable
 ### 2. Run the Unit & Invariant Suite
 
 ```bash
-bun scripts/test.ts          # Executes the 122-test suite across 27 files
+bun scripts/test.ts          # Executes the 123-test suite across 27 files
 ```
 
 ### 3. Verify Experimental Evidence
 
 Every figure quoted in this report is machine-checked against raw experimental JSON data:
 ```bash
-python -m pytest tests-run08/  # Executes the 13 automated evidence verification tests
+python -m pytest tests-run08/  # Executes the 14 automated evidence verification tests
 ```
 
 ### 4. Pipeline Entry Points
@@ -145,8 +145,8 @@ bun scripts/session-start.ts <target-directory>
 | Directory / File | Contents |
 | :--- | :--- |
 | `src/` | Core deterministic pipeline (22 modules: rollout parsers, usage ledger, redaction filter, budget ledger, reviewer client, satisfaction classifier, Markdown renderers) |
-| `test/` | 122 unit and invariant tests executed via `scripts/test.ts` |
-| `tests-run08/` | Automated evidence verification suite (13 pytest tests checking all reported figures against raw JSON outputs) |
+| `test/` | 123 unit and invariant tests executed via `scripts/test.ts` |
+| `tests-run08/` | Automated evidence verification suite (14 pytest tests checking all reported figures against raw JSON outputs) |
 | `schema/` | Data contracts (7 record types, mutability constraints, confidence ceilings) |
 | `experiments/` | Protocols, analysis, and raw JSON artifacts for Runs 01–08 |
 | `evidence/` | Verification logs from canonical test suite executions |

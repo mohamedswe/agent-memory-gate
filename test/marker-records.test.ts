@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test';
-import { renderMarkerRecord, type MarkerContext } from '../src/marker-records';
+import { renderMarkerRecord, buildTransitionCandidate, type MarkerContext } from '../src/marker-records';
+import { buildUserPrompt, callReviewer } from '../src/reviewer-client';
+import type { BudgetLedger } from '../src/budget-ledger';
 
 // A marker record is DETERMINISTIC: it is built from the transition + the
 // session's user turn texts, never from invented content. No inference here —
@@ -92,4 +94,37 @@ test('justification states the signal source (satisfaction transition) for audit
   const rec = renderMarkerRecord(CTX);
   expect(rec.justification).toContain('Satisfaction transition');
   expect(rec.justification.length).toBeLessThanOrEqual(200);
+});
+
+test('buildTransitionCandidate formats a satisfaction transition for the Reviewer LLM gate', async () => {
+  const cand = buildTransitionCandidate(CTX);
+  expect(cand.key).toContain('satisfaction:milestone:17-18');
+  expect(cand.key).toContain('I have a better idea');
+  const prompt = buildUserPrompt(cand);
+  expect(prompt).toContain('Signal type: user satisfaction transition arc');
+  expect(prompt).toContain('NOT_WORTH_SAVING');
+
+  // Verify callReviewer can return NOT_WORTH_SAVING on a noisy transition
+  const out = await callReviewer('tr-batch-1', cand, {
+    httpPost: async () => ({
+      ok: true,
+      json: {
+        choices: [{ message: { content: JSON.stringify({
+          memory_kind: 'evidence',
+          content: 'NOT_WORTH_SAVING',
+          lifecycle: 'proposed',
+          evidence: 'tentative',
+          justification: 'Generic conversational approval without reusable technical lesson.',
+        }) } }],
+        usage: { cost: 0.002 },
+      },
+    }),
+    budget: {
+      reserve: () => ({ reserved: true }),
+      reconcile: () => {},
+      remainingUsd: () => 10,
+    } as unknown as BudgetLedger,
+    estimateUsd: () => 0.05,
+  });
+  expect(out.content).toBe('NOT_WORTH_SAVING');
 });

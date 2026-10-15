@@ -5,8 +5,8 @@
  * Two job types share one pass:
  *  - repetition candidates: reviewer -> (NOT_WORTH_SAVING | record)
  *  - satisfaction-trajectory jobs: batched classifier -> per-turn verdicts ->
- *    deterministic arc detection -> arc findings recorded as attempt records
- *    (resolved arcs only; unresolved arcs recorded with outcome unresolved).
+ *    deterministic transition detection -> reviewer judges each transition
+ *    candidate -> (NOT_WORTH_SAVING | attempt record).
  *
  * Reads live-run/capture-queue.jsonl lines that have no `excluded` marker and
  * no `reviewed` marker yet. Reserves+reconciles budget per call. Marks each
@@ -25,8 +25,7 @@ import { BudgetLedger } from '../src/budget-ledger';
 import { RecordService } from '../src/records';
 import { classifySatisfaction } from '../src/satisfaction-classifier';
 import { detectTransitions } from '../src/satisfaction-transitions';
-import { renderMarkerRecord } from '../src/marker-records';
-import type { UserTurn } from '../src/session-trajectory';
+import { buildTransitionCandidate } from '../src/marker-records';
 import type { Candidate } from '../src/redaction-gate';
 import type { SatisfactionJob, UserTurn } from '../src/session-trajectory';
 
@@ -44,11 +43,19 @@ const queueArg = args.indexOf('--queue');
 const queueFile = queueArg >= 0 && args[queueArg + 1] ? args[queueArg + 1] : join(OUT_DIR, 'capture-queue.jsonl');
 const QUEUE_PATH = queueFile;
 
-// --- auth ---
-const auth = JSON.parse(readFileSync(join(homedir(), '.hermes', 'profiles', 'edge', 'auth.json'), 'utf-8'));
-const TOKEN = auth.providers.nous.access_token;
-const BASE = auth.providers.nous.inference_base_url;
-if (!TOKEN || !BASE) { console.error('missing nous auth'); process.exit(1); }
+// --- auth (env vars first, local Hermes profile fallback) ---
+let TOKEN = process.env.OPENAI_API_KEY ?? '';
+let BASE = process.env.OPENAI_BASE_URL ?? '';
+const authPath = join(homedir(), '.hermes', 'profiles', 'edge', 'auth.json');
+if ((!TOKEN || !BASE) && existsSync(authPath)) {
+  const auth = JSON.parse(readFileSync(authPath, 'utf-8'));
+  TOKEN ||= auth?.providers?.nous?.access_token ?? '';
+  BASE ||= auth?.providers?.nous?.inference_base_url ?? '';
+}
+if (!TOKEN || !BASE) {
+  console.error('missing inference auth: set OPENAI_API_KEY and OPENAI_BASE_URL');
+  process.exit(1);
+}
 
 // --- queue lines ---
 interface QueueLine {
@@ -145,28 +152,35 @@ try {
         });
         jobsDone++;
         const transitions = detectTransitions(result.turns);
-        // Marker records: one per transition, written via the normal writer
-        // (deterministic content from the user's own turns; reviewer contract shape).
+        // Each detected transition becomes a candidate audited by callReviewer:
+        // if worth saving, write an attempt record for HISTORY.md; if noise,
+        // NOT_WORTH_SAVING drops it cleanly.
         const turnTexts: UserTurn[] = (line.turns ?? []).map((t, i) => ({ index: i, id: t.id ?? String(i), text: t.text ?? '' }));
         const markerOutcomes: unknown[] = [];
         for (const tr of transitions) {
-          const marker = renderMarkerRecord({
+          const trCandidate = buildTransitionCandidate({
             sessionFile: line.sessionFile,
             projectDir: line.projectDir,
             transition: tr,
             turns: turnTexts,
           });
-          // writeCandidateRecord expects a Candidate for provenance; marker
-          // records use the transition as their provenance key.
-          const pseudoCandidate = {
-            sessionFile: line.sessionFile,
-            projectDir: line.projectDir,
-            key: `satisfaction:${tr.kind}:${tr.fromIndex}-${tr.toIndex}`,
-            counts: { userRepeats: 0, agentRediscoveries: 0, rawMentions: 0 },
-          };
-          const record = await writeCandidateRecord(service, 'codex', pseudoCandidate, marker);
-          markerOutcomes.push({ kind: tr.kind, recordId: record.id });
-          saved++;
+          const trKey = `${runKey}-tr-${tr.fromIndex}-${tr.toIndex}`;
+          const output = await callReviewer(trKey, trCandidate, {
+            httpPost,
+            budget: ledger,
+            estimateUsd: () => ESTIMATE_USD,
+            endpointUrl: BASE + '/chat/completions',
+            model: 'z-ai/glm-5.3',
+          });
+          if (output.content === 'NOT_WORTH_SAVING') {
+            notWorth++;
+            markerOutcomes.push({ kind: tr.kind, status: 'not_worth_saving' });
+          } else {
+            const markerOutput = { ...output, memory_kind: 'attempt' as const };
+            const record = await writeCandidateRecord(service, 'codex', trCandidate, markerOutput);
+            markerOutcomes.push({ kind: tr.kind, recordId: record.id });
+            saved++;
+          }
         }
         arcsFound += transitions.length;
         verdictLines.push({ sessionFile: line.sessionFile, projectDir: line.projectDir, verdicts: result.turns, transitions, records: markerOutcomes, costUsd: result.costUsd });
