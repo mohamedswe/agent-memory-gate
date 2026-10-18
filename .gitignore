@@ -5,3 +5,4 @@ node_modules/
 live-run/
 .eval-local/
 __pycache__/harness/smoke-report.json
+harness/data/
