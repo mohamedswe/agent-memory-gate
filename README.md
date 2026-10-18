@@ -8,6 +8,18 @@ This repository contains the deterministic ingestion and gating pipeline (22 mod
 
 ---
 
+## Why I built this
+
+While working with coding agents, I noticed that the parts of a conversation that actually matter tend to come up again. The commands, fixes, and procedures worth remembering get repeated across sessions; one-off details don't. That suggested repetition could serve as a free signal for what to remember, with no model call needed to decide.
+
+The second motivation is context. Models are highly capable, but giving them less, more relevant information both cuts cost and avoids filling the context window with material that degrades their work. A short per-project briefing built only from repeated behavior aims to do exactly that.
+
+## How it was built
+
+The core idea, repetition as the signal for what to remember, is mine. Most of the code was written by AI coding agents working under my direction.
+
+---
+
 ## Research Question & Related Work
 
 Current agent memory architectures rely on LLM inference during the write path to determine salience, extract entities, or manage state updates:
@@ -71,7 +83,6 @@ Both systems ingested an identical corpus of 12 session-summary notes and were e
 
 **Analysis:** A-MEM achieved 7/7 recall on fresh ingestion at a cost of 13,147 write tokens. Agent Memory Gate achieved 5/7 recall at zero write cost (answering 5/5 for items that passed the repetition gate). The two missed probes corresponded to single-session findings that never repeated—demonstrating the structural recall boundary of repetition-only gating. Full protocol: [`experiments/run-08-a-mem-baseline.md`](experiments/run-08-a-mem-baseline.md); raw outputs: [`experiments/run-08-data/`](experiments/run-08-data/).
 
-*Implementation Note on A-MEM:* Inspection of the public A-MEM repository revealed that `analyze_content` (the attribute-generation LLM call described in the paper) is unreachable dead code in the current `HEAD`. Consequently, our measured token cost for A-MEM represents a lower bound relative to the published specification.
 
 ### Experiments 01–07: End-to-End Task Evaluation
 
@@ -158,6 +169,6 @@ bun scripts/session-start.ts <target-directory>
 
 Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. All quantitative claims in this document are verified against raw experiment JSON artifacts via automated evidence tests (`python -m pytest tests-run08/`).
 
-## Citation-Worthy Framing
+## Open Question
 
 If you build on this, the comparison to replicate is: *deterministic repetition-gating vs LLM-judged salience on identical procedural corpora, measuring write-path cost and ground-truth probe recall.* The open question worth pursuing: *can a second behavioral signal (user satisfaction transitions) close the one-pass starvation gap without reintroducing per-write LLM cost?*
