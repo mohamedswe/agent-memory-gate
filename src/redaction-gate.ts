@@ -46,6 +46,13 @@ const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
 
 const CREDENTIAL_PATH = /[\\/]credentials[\\/]/i;
 
+/** True if text contains anything secret-shaped (shared with env-feedback). */
+export function containsSecret(text: string): string | null {
+  for (const { pattern, label } of SECRET_PATTERNS) if (pattern.test(text)) return label;
+  if (CREDENTIAL_PATH.test(text)) return 'credentials path';
+  return null;
+}
+
 export function redactCandidates(
   input: Candidate[],
   opts: RedactionOptions = {},

@@ -6,12 +6,13 @@
 
 - **Procedures lane (`BRIEFING.md`):** a candidate is admitted to paid LLM review only after deterministic repetition is observed: the same normalized key repeated $\ge 2$ times within a session, or seen in $\ge 2$ distinct sessions of the same project. In this lane, a key seen only once never reaches a model.
 - **History lane (`HISTORY.md`):** one batched, paid LLM call per session labels each user turn's satisfaction state; deterministic code then extracts milestone / recovery / regression / unresolved transitions, which are reviewed before becoming records.
+- **Environment-feedback lane (headless runs):** with no user in the loop, the same idea is applied to commands instead: a command fails and later succeeds (`src/env-feedback.ts`). Arcs are classified deterministically (wrong invocation, tooling error fixed, unresolved, or ordinary red→green test loop, which is never stored). No model call.
 
 All paid calls sit behind a fail-closed SQLite budget ledger. Memory is rendered as two static per-project Markdown files read at session start.
 
 > **Status (2026-10-18):** this README was revised to correct several overstated claims in the original release. See [Corrections](#corrections-2026-10-18). The evidence so far supports *mechanism viability* on a small private corpus, not a general performance claim.
 
-This repository contains the ingestion and gating pipeline (22 modules, 123 unit and invariant tests), evaluation notes for an eight-run pilot series (including null results), and a small comparison against A-MEM.
+This repository contains the ingestion and gating pipeline (24 modules, 133 unit and invariant tests), evaluation notes for an eight-run pilot series (including null results), and a small comparison against A-MEM.
 
 ---
 
@@ -148,7 +149,7 @@ This is gbrain 0.48.5.0, the version installed on 2026-09-09 and used for every 
 ### 2. Run the Unit & Invariant Suite
 
 ```bash
-bun scripts/test.ts          # 123 tests across 27 files; 107 run without gbrain,
+bun scripts/test.ts          # 133 tests across 28 files; 117 run without gbrain,
                              # the 16 in records, record-boundary, candidate-writer,
                              # project-registry and schema need it installed
 ```
@@ -182,7 +183,7 @@ bun scripts/session-start.ts <target-directory>
 | Directory / File | Contents |
 | :--- | :--- |
 | `src/` | Pipeline (22 modules: rollout parsers, usage and cross-session ledgers, redaction filter, budget ledger, reviewer client, satisfaction classifier, Markdown renderers). Capture and gating are deterministic; the reviewer and classifier make paid LLM calls. |
-| `test/` | 123 unit and invariant tests executed via `scripts/test.ts` |
+| `test/` | 133 unit and invariant tests executed via `scripts/test.ts` |
 | `tests-run08/` | 18 pytest consistency checks: quoted figures match the Run 08 JSON and the Runs 01–06 summary |
 | `schema/` | Data contracts (7 record types, mutability constraints, confidence ceilings) |
 | `experiments/` | Protocols and results for Runs 01–08; raw JSON for Run 08 and per-session figures for Runs 01–06 (rollouts themselves are private) |
