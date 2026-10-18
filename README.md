@@ -114,19 +114,19 @@ Fresh Codex sessions with and without the memory files, on the same commit, with
 
 | Question | What the published data shows |
 | :--- | :--- |
-| **Does the briefing reduce uncached input tokens?** | Mixed, mostly small savings. Run 01: +1.8% (memory used more). Run 02: −7.5%. Run 04 (3 pairs): −29%, −21%, +1% (mean −17%). Run 03's three pairs informed the earlier summary but their per-run results are not yet published. Prompt-cache behaviour was not controlled, which affects "uncached" counts. |
-| **Does it change procedural compliance?** | Possibly. Memory runs used `npm --offline --ignore-scripts` 3/3 vs 0/3 for baseline (runs 02–03 batch, same repo, same briefing). |
+| **Does the briefing reduce uncached input tokens?** | Possibly, but not shown. Across the **7 executed pairs**: run 01 +1.8%; run 02 (3 pairs, same task) −7.5%, −28.3%, −20.0%; run 04 (3 pairs) −29.3%, −21.2%, **+14.6%**. Memory used fewer uncached tokens in 5 of 7 pairs (median −20%, mean −12.8%, SD 16.5 points); a two-sided sign test gives p ≈ 0.45. Only two distinct tasks contribute 6 of the 7 pairs, and prompt caching was not controlled. Per-session figures: [`experiments/runs-01-06-summary.json`](experiments/runs-01-06-summary.json). |
+| **Does it change procedural compliance?** | Weak signal. In run 02's 3 pairs, memory used `npm --offline --ignore-scripts` in 2/3 runs vs 0/3 for baseline (previously reported as 3/3). One baseline run read a file outside its workspace; no memory run did. |
 | **Does it improve task correctness?** | No measurable effect. Both conditions reached the correct result in every pair. |
 | **Does stale memory mislead the agent?** | Not in this test. In run 04, the 3 memory-condition runs (whose briefing contained dead paths and stale habits) executed none of the stale commands. |
 | **Does the full loop work end to end?** | Yes, mechanically (run 07). Phase 2 used 29% fewer uncached input tokens than phase 1, **but** the phases were different tasks (n = 1 each), so the difference cannot be attributed to memory alone. Phase 2's `BRIEFING.md` contained **zero procedures**: any benefit came from `HISTORY.md` (the satisfaction-transition lane), not from the repetition gate. |
-| **Runs 05–06** | Null results. Short artificial "trap" tasks did not discriminate because agents derived everything they needed from the repo. Run 05 also showed that an unwired `NOTE.md` at the workspace root was never read, so a hand-written-note baseline must be wired the same way as the memory files. See the experiment log. |
+| **Runs 05–06** | Null results, and in run 06 the memory condition cost more. Run 05 (heredoc trap): all three conditions wrote files with Codex's patch tool, so the trap could never fire; all passed first try. Run 06: memory used 2.4× the baseline's uncached input (25.4k vs 10.8k) because it also ran the full test suite. The hand-written `NOTE.md` was not read in run 05 but was read in run 06. See the experiment log. |
 
 ---
 
 ## Structural Trade-Offs & Limitations
 
 1. **Single-Pass Starvation:** The procedures lane promotes nothing from work done cleanly once. In run 07 phase 1, a full feature build produced zero repetition candidates. The history lane (satisfaction transitions) is the current attempt to cover this gap; it costs one classifier call per session plus one review call per transition, so it is not free.
-2. **Sample Size and Design:** 8 documented baseline/memory pairs (runs 01–04) plus one two-phase loop test (run 07), all on the author's repositories with one briefing snapshot per series. No variance analysis, no independent tasks, no ablation separating the two lanes. These results establish that the mechanism runs, not that it helps.
+2. **Sample Size and Design:** 7 executed baseline/memory pairs (runs 01, 02 ×3, 04 ×3) plus one two-phase loop test (run 07), all on the author's repositories with one briefing snapshot per series. No variance analysis, no independent tasks, no ablation separating the two lanes. These results establish that the mechanism runs, not that it helps.
 3. **Cross-Project Scaling:** Memory is scoped to per-project Markdown briefings without vector embeddings; scaling behavior across large multi-repo workspaces is unmeasured.
 4. **Rollout Format Support:** Ingestion parsers currently support Codex and Hermes session logs only.
 5. **Evaluation Granularity:** Probe recall relies on deterministic string/regex matching rather than semantic LLM-as-a-judge grading.
@@ -141,9 +141,9 @@ Requires [Bun](https://bun.sh/) (for native SQLite and TypeScript execution), Py
 
 Install `gbrain` (record store; runs on embedded PGLite):
 ```bash
-bun install -g github:garrytan/gbrain#latest-stable
+bun install -g github:garrytan/gbrain#43597b1
 ```
-`latest-stable` is a moving tag on a frequently released package, so results may drift. The tested version will be pinned here; until then, set `GBRAIN_PACKAGE_DIR` to point at a specific checkout if you need a fixed version.
+This is gbrain 0.48.5.0, the version installed on 2026-09-09 and used for every run in this repository. `latest-stable` is a moving tag on a frequently released package; newer versions are untested. Set `GBRAIN_PACKAGE_DIR` to use a checkout elsewhere.
 
 ### 2. Run the Unit & Invariant Suite
 
@@ -155,9 +155,9 @@ bun scripts/test.ts          # 123 tests across 27 files; 107 run without gbrain
 
 ### 3. Check Evidence Consistency
 
-`tests-run08/` checks that the Run 08 figures quoted in this README and the experiment write-up match the raw result JSON files, and that the JSON totals are internally consistent. These are **consistency checks, not independent verification**: the JSON files were produced by the same author's scripts, and the private session logs they were derived from are not published.
+`tests-run08/` checks that the figures quoted in this README and the experiment write-ups match the raw result JSON files (Run 08) and the per-session summary (Runs 01–06), and that the JSON totals are internally consistent. These are **consistency checks, not independent verification**: the JSON files were produced by the same author's scripts, and the private session logs they were derived from are not published.
 ```bash
-python -m pytest tests-run08/  # 14 consistency checks for Run 08
+python -m pytest tests-run08/  # 18 consistency checks (14 for Run 08, 4 for Runs 01–06)
 ```
 
 ### 4. Pipeline Entry Points
@@ -183,9 +183,9 @@ bun scripts/session-start.ts <target-directory>
 | :--- | :--- |
 | `src/` | Pipeline (22 modules: rollout parsers, usage and cross-session ledgers, redaction filter, budget ledger, reviewer client, satisfaction classifier, Markdown renderers). Capture and gating are deterministic; the reviewer and classifier make paid LLM calls. |
 | `test/` | 123 unit and invariant tests executed via `scripts/test.ts` |
-| `tests-run08/` | 14 pytest consistency checks: Run 08 figures in the write-ups match the raw JSON outputs |
+| `tests-run08/` | 18 pytest consistency checks: quoted figures match the Run 08 JSON and the Runs 01–06 summary |
 | `schema/` | Data contracts (7 record types, mutability constraints, confidence ceilings) |
-| `experiments/` | Protocols and results for Runs 01–08; raw JSON published for Run 08 only |
+| `experiments/` | Protocols and results for Runs 01–08; raw JSON for Run 08 and per-session figures for Runs 01–06 (rollouts themselves are private) |
 | `evidence/` | Verification logs from canonical test suite executions |
 | `docs/` | Architecture diagrams, formal design notes, and literature review |
 
@@ -193,7 +193,7 @@ bun scripts/session-start.ts <target-directory>
 
 ## Provenance & License
 
-Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. Run 08 figures are consistency-checked against its raw JSON (`python -m pytest tests-run08/`). Figures for Runs 01–07 come from the experiment log and their raw transcripts are not published.
+Released under the MIT License. This repository is a sanitized export of an internal research codebase (reference commit recorded in `SOURCE_COMMIT.txt`), with local filesystem paths normalized and private session logs omitted. Run 08 figures are consistency-checked against its raw JSON (`python -m pytest tests-run08/`). Runs 01–06 figures are checked against `experiments/runs-01-06-summary.json`, extracted from private rollouts that are not published; Run 07 figures come from the experiment log.
 
 ## Next Steps
 
@@ -210,7 +210,8 @@ The original release overstated several results. This revision:
 - **Run 08:** no longer called a controlled comparison. The gate arm probed pre-existing memory rather than ingesting the corpus, so its "0 write tokens" did not measure ingestion cost. The explanation of the two misses now matches the experiment log (coverage, not the gate's recall boundary), and the post-hoc "5/5 on captured subset" figure is withdrawn.
 - **Write-path cost:** the claim of "0 tokens" / "eliminates LLM-judged salience" is replaced with a full account. The history lane makes one paid classifier call per session plus one review call per transition.
 - **Run 07:** the 29% figure compared two different tasks, and the briefing held zero procedures; any benefit came from the history lane, not the repetition gate.
-- **Runs 01–04:** "10–29% reduction" replaced with the per-run figures (+1.8% to −29%). The pair count is corrected to the 8 pairs documented here; Run 03's per-run results are not yet published.
-- **Run 04:** "6/6 trials" corrected to the 3 runs that actually had memory.
+- **Runs 01–04:** "9 pairs" corrected to **7**. Run 03's three planned reps were never executed (their workspaces have no sessions); run 02 was instead run three times, and the earlier count appears to have treated those re-runs as run 03. "10–29% reduction" replaced with per-pair figures (+14.6% to −29.3%; memory better in 5 of 7).
+- **Run 04:** the original log misrecorded rep 3's baseline as 40.2k uncached tokens; the session record shows 35.1k, so rep 3 is +14.6% for memory, not +1%. "6/6 trials" corrected to the 3 runs that actually had memory.
+- **Compliance:** `--offline --ignore-scripts` adherence corrected from 3/3 to 2/3.
 - **Evidence tests:** described as consistency checks rather than verification.
-- **Setup:** `gbrain` uses embedded PGLite (no server); the moving `latest-stable` tag is flagged.
+- **Setup:** `gbrain` uses embedded PGLite (no server); the version used for all runs is now pinned (0.48.5.0, commit `43597b1`).
