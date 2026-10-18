@@ -92,6 +92,8 @@ Workspaces: run-04-rep1 (baseline first), rep2 (memory first), rep3 (baseline fi
 
 **Uncached input:** baseline 40.0k/34.9k/40.2k vs memory 28.3k/27.5k/40.2k — memory -17% mean, 2/3 in its favor; memory-rep3 was an outlier (+1%) with elevated total input (198k). Tool calls: memory 3/3/5 vs baseline 5/4/4.
 
+> **Correction (2026-10-18):** the paragraph below summarizes runs 01–04 as "9 pairs" and "consistently ~10–20%". From the results published in this file, the documented count is 8 pairs (run 01: 1, run 02: 1, run 03: 3, run 04: 3), and run 03's per-run figures are not recorded here. The published per-pair uncached-input deltas are +1.8% (run 01), −7.5% (run 02), and −29%, −21%, +1% (run 04). Prompt caching was not controlled. Kept as originally written for the record:
+
 **Cross-eval picture after 9 pairs (runs 01-04):** briefing consistently saves ~10-20% uncached input; improves protocol discipline (offline/ignore-scripts 3/3 vs 0/3 in run-02/03 batch); NEVER changed correctness (methods converge in every task); no measurable speed effect; and survives a baited staleness trap. Memory = efficiency + discipline, not capability.
 
 ## Run 05 prepared (2026-10-12): the LONGITUDINAL test — failure knowledge vs fresh sessions
@@ -106,6 +108,23 @@ Three conditions (fresh software-auditor exports, identical commit):
 - run-05-memory: .hermes-memory/ (BRIEFING.md + HISTORY.md) with the captured failure record
 
 Scoring: (a) file-creation method per condition (heredoc vs direct write — from tool calls, not claims), (b) whether tests pass first try, (c) recovery cost if the failure hits (steps to fix), (d) token/tool cost. Predictions: baseline hits the trap or writes it safely by luck; note avoids it (explicit, human-tuned); memory avoids it only if HISTORY.md is actually read — that is the claim under test.
+
+## Result: runs 05–06 (2026-10-12) — NULL (written up 2026-10-18)
+
+These runs were summarized in one line in the run-07 notes and not written up at the time. Recorded here as null results so the series is complete.
+
+**What is known from the original notes:**
+
+- **Run 05** (three conditions: baseline, hand-written `NOTE.md`, memory with the captured heredoc-corruption record). The task did not discriminate between conditions: competent agents derived what they needed from the repository, so the recorded failure was not a meaningful trap.
+- **Run 05, secondary finding:** the hand-written `NOTE.md` placed at the workspace root was **never read**, because nothing in the agent's instructions pointed to it, whereas `.project-memory/` is referenced from `AGENTS.md`. The "note" condition therefore did not test note *content* versus memory *content*; it tested wiring. Any future hand-written-note baseline must be wired identically.
+- **Run 06:** another invented micro-trap task with the same outcome (no discrimination).
+- **Conclusion carried into run 07:** artificial short traps cannot test longitudinal memory; realistic multi-session work is needed.
+
+**Not yet recorded (author to fill from private transcripts):**
+
+- [ ] Run 05: file-creation method per condition (heredoc vs direct write), tests passing first try, token/tool counts.
+- [ ] Run 06: task text, conditions, and per-condition token/tool counts.
+- [ ] Run 03: per-rep uncached input, tool counts and compliance outcome for all 3 pairs.
 
 ## Run 07 prepared (2026-10-12): the REALISTIC loop test — build work, capture, reuse
 

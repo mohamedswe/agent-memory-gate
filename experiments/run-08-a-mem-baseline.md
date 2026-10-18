@@ -235,3 +235,18 @@ salience at orders-of-magnitude lower write cost?** On this corpus:
   ~/.hermes/profiles/edge/auth.json nous credentials)
 - dual-brain arm: `scripts/run08_dualbrain.py` in the same dir
 - Raw (sanitized re-run): run08_amem_results.json, run08_dualbrain_results.json
+
+---
+
+## Correction (2026-10-18)
+
+The verdict above overstates what this run shows. Kept unedited for the record; read it with these corrections:
+
+1. **Not a controlled comparison.** The A-MEM arm ingested the 12 notes. The dual-brain arm did not; it probed the system's pre-existing live memory for 4 projects (~6k tokens), built earlier from other sessions. "0 paid calls" therefore measures a corpus that was never ingested, not the gate's write cost. Point 1 of the verdict ("Cost: decisively yes") is withdrawn.
+2. **Scoring differed between arms.** A-MEM was scored on top-3 retrieved notes; dual-brain on regex over the full text of all four projects' briefings.
+3. **The misses are coverage, as this document says, not the gate's recall boundary.** The README previously described them as single-session findings that never repeated; that was wrong and has been corrected there. `corpus-b-1` (a one-pass note) was a dual-brain hit, so that content reached memory by another route.
+4. **"5/5 on captured content"** is a post-hoc denominator and is no longer claimed.
+5. **Pre-registered corpus-B criterion** (reject if A-MEM answers >50% of probes dual-brain cannot) landed at exactly 50% (1 of 2), which is not informative either way.
+6. **The dual-brain write path is not LLM-free.** Its history lane makes one paid classifier call per session with user turns and, since 2026-10-14, one review call per detected transition.
+
+A fair rerun requires both systems to ingest the same raw rollouts from an empty state, count all paid calls on both sides, and use the same retrieval budget when scoring.

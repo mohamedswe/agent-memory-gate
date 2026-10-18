@@ -60,16 +60,18 @@ LLM-judged salience IS the experiment.
 
 | Claim | Verdict (runs 01–07) | Note |
 |---|---|---|
-| Briefing saves input tokens | YES — 10–29% consistent | 9 pairs + run-07 phases |
+| Briefing saves input tokens | MIXED — +1.8% to −29% per pair, mostly small savings | 8 documented pairs (run 03's per-run results unpublished); prompt caching uncontrolled |
 | Briefing improves discipline | YES, small but clean | canonical-runner wiring, no false greens |
 | Briefing changes correctness on repo-derivable tasks | NO | smart agents re-derive; this is a finding, not a failure |
-| Stale content gets followed | NO — survived baiting | run-04 trap |
-| Loop works end-to-end on real work | YES | run-07: −29% uncached, correctness tie |
+| Stale content gets followed | NO — survived baiting | run-04 trap, 3 memory runs |
+| Loop works end-to-end on real work | YES, mechanically | run-07: −29% uncached but phases were different tasks (n=1); BRIEFING had 0 procedures, so any benefit came from HISTORY |
 
 ~~Not yet done: a **direct comparison arm vs Mem0** (or A-MEM) on the same
 workload.~~ **Done 2026-10-12 (run-08, `experiments/run-08-a-mem-baseline.md`):**
-A-MEM paid 13,147 write tokens / 11 calls for 12 notes vs 0 for the gate;
-A-MEM won recall 7/7 vs 5/7 (gate 5/5 on content it had captured). A-MEM
+A-MEM paid 13,147 write tokens / 11 calls to ingest 12 notes; the gate arm
+did not ingest them (it probed pre-existing memory), so this is not a
+controlled cost comparison. A-MEM won recall 7/7 vs 5/7. (Corrected
+2026-10-18; see README "Corrections".) A-MEM
 was the cleaner baseline than Mem0: open source, self-hosted, no API-key
 entanglement, and its "no importance gate, store-and-link everything" stance
 is the exact opposite pole to repetition-gating.
@@ -94,7 +96,7 @@ is the exact opposite pole to repetition-gating.
    Their new algorithm reduces LLM judgment at write time — the field is
    converging toward cheap write paths. Good: it validates the cost thesis.
    Our distinction is that the gate is *observable behavior*, not extraction.
-3. **"Small-n evals."** 9 pairs + run-07 is honest but small. The Mem0/A-MEM
+3. **"Small-n evals."** 8 documented pairs + run-07 is small. The Mem0/A-MEM
    comparison arm with more pairs is the answer; also position as
    engineering-methodology research (deterministic pipeline, reproducible)
    rather than a claims-leaderboard paper.
