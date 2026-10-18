@@ -4,4 +4,4 @@ node_modules/
 *.pglite.bak
 live-run/
 .eval-local/
-__pycache__/
+__pycache__/harness/smoke-report.json
