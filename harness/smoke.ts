@@ -21,11 +21,14 @@
  *  5. ISOLATION: a run in a fresh folder WITHOUT memory cannot recover the
  *     canary (no leak through Claude Code's own memory or settings).
  *  6. UNWIRED: memory present but no CLAUDE.md pointer — does the agent find
- *     it anyway? (Informational: tells us how much wiring matters.)
+ *     it anyway? (Informational. First run: yes, via a folder-wide Grep.)
+ *  7. DETECTOR: any run that found the canary must register as having
+ *     touched memory (catches Grep/Bash access, not just Read).
  */
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
+import { parseStream } from './stream';
 
 const args = process.argv.slice(2);
 const model = args.includes('--model') ? args[args.indexOf('--model') + 1] : 'haiku';
@@ -37,22 +40,7 @@ function findClaude(): string | null {
   return Bun.which('claude') ?? Bun.which('claude.cmd') ?? Bun.which('claude.exe');
 }
 
-interface RunResult {
-  label: string;
-  exitCode: number | null;
-  eventTypes: Record<string, number>;
-  toolCalls: { name: string; target: string }[];
-  readMemory: boolean;
-  answer: string;
-  foundCanary: boolean;
-  resultFields: string[];
-  usageFields: string[];
-  usage: Record<string, number>;
-  numTurns: number | null;
-  costField: string | null;
-  durationMs: number;
-  stderrTail: string;
-}
+const MARKER = `amg-memory-marker-${CANARY}`;
 
 function makeDir(withMemory: boolean, withWiring: boolean): string {
   const dir = mkdtempSync(join(tmpdir(), 'amg-smoke-'));
@@ -62,13 +50,13 @@ function makeDir(withMemory: boolean, withWiring: boolean): string {
   if (withWiring) writeFileSync(join(dir, 'CLAUDE.md'), WIRING);
   if (withMemory) {
     mkdirSync(join(dir, '.project-memory'));
-    writeFileSync(join(dir, '.project-memory', 'BRIEFING.md'), `# Briefing\n\nThe project canary word is ${CANARY}.\n`);
-    writeFileSync(join(dir, '.project-memory', 'HISTORY.md'), '# History\n\nNo prior sessions.\n');
+    writeFileSync(join(dir, '.project-memory', 'BRIEFING.md'), `<!-- ${MARKER} -->\n# Briefing\n\nThe project canary word is ${CANARY}.\n`);
+    writeFileSync(join(dir, '.project-memory', 'HISTORY.md'), `<!-- ${MARKER} -->\n# History\n\nNo prior sessions.\n`);
   }
   return dir;
 }
 
-function run(claude: string, label: string, dir: string): RunResult {
+function run(claude: string, label: string, dir: string) {
   const t0 = Date.now();
   const p = Bun.spawnSync([
     claude, '-p', PROMPT,
@@ -77,49 +65,30 @@ function run(claude: string, label: string, dir: string): RunResult {
     '--model', model,
     '--allowedTools', 'Read,Glob,Grep,LS',
   ], { cwd: dir, stdout: 'pipe', stderr: 'pipe', env: process.env });
-  const out = p.stdout.toString();
-  const eventTypes: Record<string, number> = {};
-  const toolCalls: { name: string; target: string }[] = [];
-  let result: any = null;
-  for (const line of out.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    let ev: any;
-    try { ev = JSON.parse(line); } catch { continue; }
-    const t = `${ev.type ?? '?'}${ev.subtype ? ':' + ev.subtype : ''}`;
-    eventTypes[t] = (eventTypes[t] ?? 0) + 1;
-    const content = ev?.message?.content;
-    if (ev.type === 'assistant' && Array.isArray(content)) {
-      for (const c of content) {
-        if (c?.type === 'tool_use') {
-          const inp = c.input ?? {};
-          const target = String(inp.file_path ?? inp.path ?? inp.pattern ?? '').replace(dir, '<run-dir>');
-          toolCalls.push({ name: String(c.name), target });
-        }
-      }
-    }
-    if (ev.type === 'result') result = ev;
-  }
-  const answer = String(result?.result ?? '').trim().slice(0, 80);
-  const usage = (result?.usage ?? {}) as Record<string, unknown>;
-  const numeric: Record<string, number> = {};
-  for (const [k, v] of Object.entries(usage)) if (typeof v === 'number') numeric[k] = v;
+  const m = parseStream(p.stdout.toString(), { runDir: dir, marker: MARKER });
+  const answer = m.answer.trim().slice(0, 80);
   return {
     label,
     exitCode: p.exitCode,
-    eventTypes,
-    toolCalls,
-    readMemory: toolCalls.some(t => t.target.includes('.project-memory')),
-    answer: answer.replace(CANARY, '<CANARY>'),
+    ok: m.ok,
+    eventTypes: m.eventTypes,
+    toolCalls: m.toolCalls,
+    memoryTouched: m.memoryTouched,
+    memoryTouchedVia: m.memoryTouchedVia,
+    answer: answer.split(CANARY).join('<CANARY>'),
     foundCanary: answer.includes(CANARY),
-    resultFields: result ? Object.keys(result).sort() : [],
-    usageFields: Object.keys(usage).sort(),
-    usage: numeric,
-    numTurns: typeof result?.num_turns === 'number' ? result.num_turns : null,
-    costField: result ? (Object.keys(result).find(k => k.includes('cost')) ?? null) : null,
+    usage: m.usage,
+    newInputTokens: m.newInputTokens,
+    totalInputTokens: m.totalInputTokens,
+    numTurns: m.numTurns,
+    costUsd: m.costUsd,
+    permissionDenials: m.permissionDenials,
+    rateLimitEvents: m.rateLimitEvents,
     durationMs: Date.now() - t0,
     stderrTail: p.stderr.toString().slice(-300),
   };
 }
+type RunResult = ReturnType<typeof run>;
 
 const claude = findClaude();
 const report: any = {
@@ -140,20 +109,21 @@ if (!claude) {
   for (const d of Object.values(dirs)) { try { rmSync(d, { recursive: true, force: true }); } catch {} }
   report.runs = [wired, isolation, unwired];
 
-  const hasUsage = (r: RunResult) => ['input_tokens', 'output_tokens'].every(f => r.usageFields.includes(f));
   report.checks = {
-    headless_runs_ok: [wired, isolation, unwired].every(r => r.exitCode === 0 && r.resultFields.length > 0),
-    usage_logged: [wired, isolation, unwired].every(hasUsage),
-    cache_fields_logged: wired.usageFields.some(f => f.includes('cache')),
+    headless_runs_ok: [wired, isolation, unwired].every(r => r.exitCode === 0 && r.ok),
+    usage_logged: [wired, isolation, unwired].every(r => r.totalInputTokens > 0 && r.usage.output_tokens > 0),
     turns_logged: wired.numTurns !== null,
-    cost_field_present: wired.costField !== null,
+    cost_field_present: wired.costUsd !== null,
     tool_calls_visible: wired.toolCalls.length > 0,
-    wired_reads_memory: wired.readMemory,
+    wired_touches_memory: wired.memoryTouched,
     wired_recovers_canary: wired.foundCanary,
     isolated_run_cannot_see_canary: !isolation.foundCanary,
-    unwired_reads_memory_anyway: unwired.readMemory,
+    isolated_run_never_touches_memory: !isolation.memoryTouched,
+    // detector sanity: if a run found the canary, the detector must have seen it
+    detector_consistent: [wired, isolation, unwired].every(r => !r.foundCanary || r.memoryTouched),
+    unwired_finds_memory_anyway: unwired.memoryTouched,
   };
-  const required = ['headless_runs_ok', 'usage_logged', 'tool_calls_visible', 'wired_reads_memory', 'wired_recovers_canary', 'isolated_run_cannot_see_canary'];
+  const required = ['headless_runs_ok', 'usage_logged', 'tool_calls_visible', 'wired_touches_memory', 'wired_recovers_canary', 'isolated_run_cannot_see_canary', 'isolated_run_never_touches_memory', 'detector_consistent'];
   const failed = required.filter(k => !report.checks[k]);
   report.verdict = failed.length === 0 ? 'PASS: harness can drive, measure and isolate Claude Code.' : `FAIL: ${failed.join(', ')}`;
   if (report.userLevelClaudeMdExists) {
