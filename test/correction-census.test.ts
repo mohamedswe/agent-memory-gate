@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import {
-  claudeCodeSessionTurns, clusterWordSets, codexSessionTurns, contentWords, correctionSignature, detectCorrections,
+  claudeCodeSessionTurns, cleanUserText, clusterWordSets, decodeEntities, codexSessionTurns, contentWords, correctionSignature, detectCorrections,
   fuzzyRecurrence, hermesSessionTurns, isCorrection, isDirective, isEvalProject, isMatchableSignature, recallSample,
   runCensus, sampleEvents, similarWords, splitClauses, standingInstructions, stem, type SessionTurns,
 } from '../src/correction-census';
@@ -19,6 +19,7 @@ test('isCorrection: pushback right after an agent turn is detected', () => {
     'revert that change',
     'undo the last edit',
     'why did you delete the test?',
+    'why did you stop?',
     'not like that',
     'I said no new dependencies',
   ]) expect(isCorrection(text, true)).toBe(true);
@@ -296,4 +297,55 @@ test('recallSample returns only unflagged user turns after agent turns, capped p
   const items = recallSample([s], 2);
   expect(items).toHaveLength(2);
   for (const i of items) { expect(isCorrection(i.text, true)).toBe(false); expect(i.previous.role).toBe('agent'); }
+});
+
+// ------------------------------------------------- v2: detector precision
+
+test('isCorrection v2: open why-questions are not corrections, "why did you ..." is', () => {
+  for (const text of ['why did it break?', 'why is that important?', 'why does the engine keep failing', "why can't I run two sessions?"]) {
+    expect(isCorrection(text, true)).toBe(false);
+  }
+  expect(isCorrection("why didn't you run the tests?", true)).toBe(true);
+  expect(isCorrection('why are you editing the config', true)).toBe(true);
+});
+
+test('isCorrection v2: first-person "I don\'t" describes the user, not the agent', () => {
+  expect(isCorrection("I don't have any API keys, give me the setup steps", true)).toBe(false);
+  expect(isCorrection("i dont know, I just added regression tests", true)).toBe(false);
+  expect(isCorrection("you don't need to restart the server", true)).toBe(true);
+  expect(isCorrection("don't delete my projects", true)).toBe(true);
+});
+
+test('isCorrection v2: agreement or praise opened with no/nope/that\'s is not pushback', () => {
+  for (const text of ["no it's fine, will it still deploy?", 'nah its ok go ahead', 'nope that makes more sense', 'no worries', "that's great progress", 'thats perfect']) {
+    expect(isCorrection(text, true)).toBe(false);
+  }
+  expect(isCorrection('no, the output goes in the results folder', true)).toBe(true);
+  expect(isCorrection("that's wrong, it should be per file", true)).toBe(true);
+});
+
+// --------------------------------------------------- v2: text cleaning
+
+test('cleanUserText strips the Codex IDE wrapper down to the request', () => {
+  const wrapped = '# Context from my IDE setup:\n\n## Active file: app/login.tsx\n\n## Open tabs:\n- login.tsx\n\n## My request for Codex:\nrefine the wording';
+  expect(cleanUserText(wrapped)).toBe('refine the wording');
+  expect(cleanUserText('# Context from my IDE setup:\n## Active file: x.ts')).toBe('');
+});
+
+test('cleanUserText drops client-injected [System: ...] rows and decodes entities', () => {
+  expect(cleanUserText('[System: The previous response was cut off by a network error mid-stream. Continue.]')).toBe('');
+  expect(cleanUserText('What is the fix&#x20; who do I ask&#32;now &amp; how')).toBe('What is the fix  who do I ask now & how');
+  expect(decodeEntities('&nbsp;&lt;tag&gt;&unknown;')).toBe(' <tag>&unknown;');
+});
+
+test('hermesSessionTurns skips [System:] rows entirely, keeping real adjacency', () => {
+  const s = hermesSessionTurns('h2', 'unknown', 1, [
+    { id: 1, role: 'user', content: 'explain the design' },
+    { id: 2, role: 'assistant', content: 'partial answer' },
+    { id: 3, role: 'user', content: '[System: The previous response was cut off. Continue exactly where you left off.]' },
+    { id: 4, role: 'assistant', content: 'rest of answer' },
+    { id: 5, role: 'user', content: 'no, use the simpler version' },
+  ]);
+  expect(s.turns.filter(t => t.role === 'user').map(t => t.text)).toEqual(['explain the design', 'no, use the simpler version']);
+  expect(detectCorrections(s)).toHaveLength(1);
 });

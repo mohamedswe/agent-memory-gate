@@ -52,6 +52,42 @@ function toMs(value: unknown): number {
 
 // ---------------------------------------------------------------- extraction
 
+const NAMED_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Decode HTML entities some clients leave in pasted text (e.g. "&#x20;" for a space). */
+export function decodeEntities(text: string): string {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+    if (e[0] === '#') {
+      const code = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return Number.isFinite(code) && code > 0 && code < 0x110000 ? String.fromCodePoint(code) : m;
+    }
+    return NAMED_ENTITIES[e.toLowerCase()] ?? m;
+  });
+}
+
+/**
+ * The Codex IDE extension wraps each prompt in "# Context from my IDE setup:
+ * ... ## My request for Codex: <prompt>". Only the part after the marker is
+ * the user's voice. A wrapper with no marker is all context: returns ''.
+ */
+const IDE_CONTEXT = /^#\s*Context from my IDE setup:/i;
+const IDE_REQUEST = /##\s*My request for Codex:\s*/i;
+
+/** Client-injected "user" rows: Hermes's retry notice after a dropped stream. */
+const CLIENT_INJECTED = [/^\[System:/];
+
+/** Normalize one user message from any source; '' means "not the user's voice". */
+export function cleanUserText(raw: string): string {
+  let t = raw.trim();
+  if (IDE_CONTEXT.test(t)) {
+    const m = IDE_REQUEST.exec(t);
+    t = m ? t.slice(m.index + m[0].length) : '';
+  }
+  t = decodeEntities(t).trim();
+  if (CLIENT_INJECTED.some(re => re.test(t))) return '';
+  return t;
+}
+
 /** Codex rollout JSONL -> turns. Reuses parseRollout; drops system-injected "user" content. */
 export function codexSessionTurns(jsonl: string, fallbackId: string): SessionTurns {
   const rollout = parseRollout(jsonl);
@@ -67,8 +103,8 @@ export function codexSessionTurns(jsonl: string, fallbackId: string): SessionTur
   const turns: Turn[] = [];
   for (const ev of rollout.events) {
     if (ev.kind === 'user_message') {
-      const text = ev.text.trim();
-      if (text && !isSystemInjected(text)) turns.push({ role: 'user', text });
+      const text = isSystemInjected(ev.text.trim()) ? '' : cleanUserText(ev.text);
+      if (text) turns.push({ role: 'user', text });
     } else if (ev.kind === 'assistant_message') {
       if (ev.text.trim()) turns.push({ role: 'agent', text: ev.text.trim() });
     } else if (ev.kind === 'tool_call') {
@@ -126,8 +162,8 @@ export function claudeCodeSessionTurns(jsonl: string, fallbackId: string): Sessi
     const parts: any[] = typeof content === 'string' ? [{ type: 'text', text: content }] : Array.isArray(content) ? content : [];
     for (const c of parts) {
       if (ev.type === 'user' && c?.type === 'text' && typeof c.text === 'string') {
-        const text = c.text.trim();
-        if (text && !isClaudeCodeInjected(text)) turns.push({ role: 'user', text });
+        const text = isClaudeCodeInjected(c.text) ? '' : cleanUserText(c.text);
+        if (text) turns.push({ role: 'user', text });
       } else if (ev.type === 'user' && c?.type === 'tool_result') {
         turns.push({ role: 'agent', text: '[tool result]' });
       } else if (ev.type === 'assistant' && c?.type === 'text' && typeof c.text === 'string' && c.text.trim()) {
@@ -151,7 +187,11 @@ export function hermesSessionTurns(sessionId: string, project: string, startedAt
   const turns: Turn[] = [];
   for (const row of [...rows].sort((a, b) => a.id - b.id)) {
     const text = (row.content ?? '').trim();
-    if (row.role === 'user') { if (text) turns.push({ role: 'user', text }); }
+    if (row.role === 'user') {
+      // Client-injected rows (e.g. "[System: ... cut off ...]") clean to '' and are skipped entirely.
+      const clean = cleanUserText(text);
+      if (clean) turns.push({ role: 'user', text: clean });
+    }
     else if (row.role !== 'system') turns.push({ role: 'agent', text: text || `[${row.role}]` });
   }
   return { source: 'hermes', sessionId, project, startedAt: toMs(startedAt), turns };
@@ -163,10 +203,28 @@ export function hermesSessionTurns(sessionId: string, project: string, startedAt
 export const MAX_CORRECTION_CHARS = 280;
 export const MAX_CORRECTION_WORDS = 45;
 
+/**
+ * Detector v2. v1's false positives in a 50-item hand-read of real logs fell
+ * into four classes, each narrowed here (these rules were derived from that
+ * sample, so precision re-measured on the same items is optimistic):
+ *  1. open "why" questions ("why did it break?", "why is that important?")
+ *     -> only "why did/do/are/would/didn't/can't... you" counts;
+ *  2. first-person "I don't know / I don't have" -> "i don't" never triggers;
+ *  3. agreement opened with no/nope/nah ("no it's fine", "nope that makes sense");
+ *  4. praise opened with "that's" ("that's great progress").
+ */
+export const DETECTOR_VERSION = 2;
+
 /** Must START the message (after optional "ok,"/"hmm,"-style lead-ins are NOT stripped: kept coarse). */
-const STARTS = /^(no\b|nope\b|nah\b|stop\b|wrong\b|that'?s\b|thats\b|actually\b|use\b|instead\b|revert\b|undo\b|remove\b|change\b|not\b|why\b|fix\b|don'?t\b|do not\b)/;
+const STARTS = /^(no\b|nope\b|nah\b|stop\b|wrong\b|that'?s\b|thats\b|actually\b|use\b|instead\b|revert\b|undo\b|remove\b|change\b|not\b|fix\b|don'?t\b|do not\b|why\s+(did|do|are|would|didn'?t|didnt|can'?t|cant|won'?t|wont|have|haven'?t|aren'?t|keep)\s+you\b)/;
 /** May appear ANYWHERE. Narrower than STARTS: "use"/"fix"/"change"/"not"/"why" mid-sentence are too common. */
 const CONTAINS = /\b(don'?t|do not|stop|wrong|instead|revert|undo|not what i|i said|i told you|again\?)\b/;
+/** First person "I don't ..." describes the user, not the agent ("I don't have any keys"). */
+const FIRST_PERSON_NEGATION = /\bi\s+(don'?t|do not|dont)\b/g;
+/** "no it's fine", "nah its ok", "nope that makes more sense", "no worries". */
+const AGREEMENT = /^(no|nope|nah)\b[\s,.!]*(it'?s|its|that'?s|thats|that|all)?\s*(fine|ok|okay|good|alright|makes|worries|problem)\b/;
+/** "that's great", "thats perfect", "that's it". */
+const PRAISE = /^(that'?s|thats)\s+(great|good|perfect|fine|awesome|nice|cool|amazing|exactly|correct|right|it|brilliant|smart)\b/;
 
 /**
  * A correction is a short user message matching a pushback pattern that comes
@@ -179,7 +237,8 @@ export function isCorrection(text: string, precededByAgent: boolean): boolean {
   const t = text.trim().toLowerCase().replace(/[‘’]/g, "'");
   if (!t || t.length > MAX_CORRECTION_CHARS) return false;
   if (t.split(/\s+/).length > MAX_CORRECTION_WORDS) return false;
-  return STARTS.test(t) || CONTAINS.test(t);
+  if (AGREEMENT.test(t) || PRAISE.test(t)) return false;
+  return STARTS.test(t) || CONTAINS.test(t.replace(FIRST_PERSON_NEGATION, ' '));
 }
 
 /** Leading filler dropped from signatures; applied repeatedly ("no, just, please use X" -> "use x"). */
@@ -430,7 +489,7 @@ export function runCensus(sessionsIn: SessionTurns[], now = new Date()): { repor
   const report: CensusReport = {
     generatedAt: now.toISOString(),
     definitions: {
-      correction: `user message <= ${MAX_CORRECTION_CHARS} chars / ${MAX_CORRECTION_WORDS} words, matching a pushback pattern, directly after an agent turn`,
+      correction: `detector v${DETECTOR_VERSION}: user message <= ${MAX_CORRECTION_CHARS} chars / ${MAX_CORRECTION_WORDS} words, matching a pushback pattern, directly after an agent turn; excludes open why-questions, first-person "I don't", and no/that's-led agreement or praise`,
       signature: 'lowercased, punctuation/emoji stripped, leading no/dont/please/just/actually/stop and trailing please/thanks dropped (lossy, see src/correction-census.ts)',
       contentFree: `signature under ${MIN_SIGNATURE_WORDS} words ("no", "stop", "revert"): counted as a correction, never as a repeat`,
       repeatEvent: 'a correction whose signature already appeared in a strictly earlier session (headline numerator)',
