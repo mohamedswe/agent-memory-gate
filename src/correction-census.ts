@@ -249,6 +249,11 @@ export interface CorrectionEvent {
   repeatSameProject: boolean;
   /** ...and at least one of those earlier sessions was a DIFFERENT known project. */
   repeatOtherProject: boolean;
+  /** Fuzzy (content-word) cluster id; set by runCensus. */
+  fuzzyCluster: number;
+  fuzzyRepeat: boolean;
+  fuzzyRepeatSameProject: boolean;
+  fuzzyRepeatOtherProject: boolean;
 }
 
 export function detectCorrections(session: SessionTurns): CorrectionEvent[] {
@@ -266,6 +271,7 @@ export function detectCorrections(session: SessionTurns): CorrectionEvent[] {
       context: session.turns.slice(Math.max(0, i - 2), i),
       withinSessionRepeat: matchable && seenHere.has(signature),
       repeat: false, repeatSameProject: false, repeatOtherProject: false,
+      fuzzyCluster: -1, fuzzyRepeat: false, fuzzyRepeatSameProject: false, fuzzyRepeatOtherProject: false,
     });
     if (matchable) seenHere.add(signature);
   });
@@ -279,6 +285,10 @@ export interface Breakdown {
   matchableCorrections: number;
   repeatEvents: number;
   repeatedCorrectionRate: number;
+  /** User turns directly after an agent turn: the detector's eligible pool (0 here suggests a reader bug). */
+  userTurnsAfterAgent: number;
+  fuzzyRepeatEvents: number;
+  fuzzyRepeatedCorrectionRate: number;
 }
 
 export interface SignatureSummary {
@@ -313,6 +323,21 @@ export interface CensusReport {
   byProject: Record<string, Breakdown>;
   topRepeatedSignatures: SignatureSummary[];
   topCrossProjectSignatures: SignatureSummary[];
+  /** Same counts with fuzzy (content-word) matching instead of exact signatures. */
+  fuzzy: {
+    method: string;
+    clusters: number;
+    repeatedClusters: number;
+    crossProjectClusters: number;
+    crossSourceClusters: number;
+    repeatedEvents: number;
+    repeatedEventsSameProject: number;
+    repeatedEventsCrossProject: number;
+    repeatedCorrectionRate: number;
+    crossProjectRepeatRate: number;
+    topRepeatedClusters: ClusterSummary[];
+    topCrossProjectClusters: ClusterSummary[];
+  };
 }
 
 const ratio = (a: number, b: number) => (b ? Math.round((a / b) * 10000) / 10000 : 0);
@@ -369,12 +394,23 @@ export function runCensus(sessionsIn: SessionTurns[], now = new Date()): { repor
     i = j;
   }
 
+  // Fuzzy pass: same correction in different words (content-word overlap).
+  const fz = fuzzyRecurrence(events.map(e => ({ sessionKey: `${e.source}:${e.sessionId}`, project: e.project, startedAt: e.startedAt, words: contentWords(e.text) })));
+  events.forEach((e, k) => {
+    e.fuzzyCluster = fz.clusterOf[k]; e.fuzzyRepeat = fz.repeat[k];
+    e.fuzzyRepeatSameProject = fz.repeatSameProject[k]; e.fuzzyRepeatOtherProject = fz.repeatOtherProject[k];
+  });
+  const fuzzyClusters = summarizeClusters(events.map(e => ({ sessionKey: `${e.source}:${e.sessionId}`, source: e.source, project: e.project, text: e.text })), fz.clusterOf);
+
   const breakdown = (pick: (s: SessionTurns) => string, pickEv: (e: CorrectionEvent) => string) => {
     const out: Record<string, Breakdown> = {};
-    const get = (k: string) => (out[k] ??= { sessions: 0, userTurns: 0, corrections: 0, matchableCorrections: 0, repeatEvents: 0, repeatedCorrectionRate: 0 });
-    for (const s of sessions) { const b = get(pick(s)); b.sessions++; b.userTurns += s.turns.filter(t => t.role === 'user').length; }
-    for (const e of events) { const b = get(pickEv(e)); b.corrections++; if (e.matchable) b.matchableCorrections++; if (e.repeat) b.repeatEvents++; }
-    for (const b of Object.values(out)) b.repeatedCorrectionRate = ratio(b.repeatEvents, b.corrections);
+    const get = (k: string) => (out[k] ??= { sessions: 0, userTurns: 0, corrections: 0, matchableCorrections: 0, repeatEvents: 0, repeatedCorrectionRate: 0, userTurnsAfterAgent: 0, fuzzyRepeatEvents: 0, fuzzyRepeatedCorrectionRate: 0 });
+    for (const s of sessions) {
+      const b = get(pick(s)); b.sessions++;
+      s.turns.forEach((t, i) => { if (t.role !== 'user') return; b.userTurns++; if (s.turns[i - 1]?.role === 'agent') b.userTurnsAfterAgent++; });
+    }
+    for (const e of events) { const b = get(pickEv(e)); b.corrections++; if (e.matchable) b.matchableCorrections++; if (e.repeat) b.repeatEvents++; if (e.fuzzyRepeat) b.fuzzyRepeatEvents++; }
+    for (const b of Object.values(out)) { b.repeatedCorrectionRate = ratio(b.repeatEvents, b.corrections); b.fuzzyRepeatedCorrectionRate = ratio(b.fuzzyRepeatEvents, b.corrections); }
     return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
   };
 
@@ -421,8 +457,312 @@ export function runCensus(sessionsIn: SessionTurns[], now = new Date()): { repor
     byProject: breakdown(s => s.project, e => e.project),
     topRepeatedSignatures: repeatedSigs.sort(bySessionsDesc).slice(0, 25).map(summarize),
     topCrossProjectSignatures: crossProjectSigs.sort(bySessionsDesc).slice(0, 25).map(summarize),
+    fuzzy: {
+      method: FUZZY_METHOD,
+      clusters: fuzzyClusters.length,
+      repeatedClusters: fuzzyClusters.filter(c => c.sessions >= 2).length,
+      crossProjectClusters: fuzzyClusters.filter(c => c.sessions >= 2 && c.knownProjects >= 2).length,
+      crossSourceClusters: fuzzyClusters.filter(c => c.sessions >= 2 && c.sources.length >= 2).length,
+      repeatedEvents: events.filter(e => e.fuzzyRepeat).length,
+      repeatedEventsSameProject: events.filter(e => e.fuzzyRepeatSameProject).length,
+      repeatedEventsCrossProject: events.filter(e => e.fuzzyRepeatOtherProject).length,
+      repeatedCorrectionRate: ratio(events.filter(e => e.fuzzyRepeat).length, events.length),
+      crossProjectRepeatRate: ratio(events.filter(e => e.fuzzyRepeatOtherProject).length, events.length),
+      topRepeatedClusters: fuzzyClusters.filter(c => c.sessions >= 2).slice(0, 25),
+      topCrossProjectClusters: fuzzyClusters.filter(c => c.sessions >= 2 && c.knownProjects >= 2).slice(0, 25),
+    },
   };
   return { report, events };
+}
+
+// --------------------------------------------------------------- fuzzy match
+
+/**
+ * Words that carry no meaning about WHAT the user wants. Includes "dont"/"not"/
+ * "no", so (like the exact signature) negation is lost: "add comments" and
+ * "don't add comments" share a cluster. Check the sample for such collisions.
+ */
+const STOPWORDS = new Set((
+  'a an the and or but if then so to of in on at for with from by as is are was were be been being am ' +
+  'it its this that these those there here i you we they he she me my your our us them their ' +
+  'do does did done doing dont doesnt didnt not no nope yes yeah ok okay hey please pls just actually also ' +
+  'can could would should will shall may might must have has had having get got gets ' +
+  'what why how when where which who whom whose all any some more very really now again still too than ' +
+  'about into over like want need know think let lets thing things one ones something anything way ' +
+  'im ive youre youve thats theres its isnt arent wasnt cant wont'
+).split(' '));
+
+/** Crude suffix stripping so adding/added/adds -> add, comments -> comment. Not a real stemmer. */
+export function stem(word: string): string {
+  let w = word;
+  let stripped = false;
+  if (w.length > 5 && w.endsWith('ing')) { w = w.slice(0, -3); stripped = true; }
+  else if (w.length > 4 && w.endsWith('ed')) { w = w.slice(0, -2); stripped = true; }
+  else if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') && !w.endsWith('us')) w = w.slice(0, -1);
+  // stopping -> stopp -> stop; but add(ing) -> add stays
+  if (stripped && w.length > 3 && w[w.length - 1] === w[w.length - 2] && !/[sl]/.test(w[w.length - 1])) w = w.slice(0, -1);
+  return w;
+}
+
+/** Sorted, unique, stemmed content words. */
+export function contentWords(text: string): string[] {
+  const words = text.toLowerCase()
+    .replace(/[‘’']/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && !STOPWORDS.has(w))
+    .map(stem);
+  return [...new Set(words)].sort();
+}
+
+export const FUZZY_JACCARD = 0.5;
+export const FUZZY_METHOD = `content-word sets (stopwords dropped, crude stemming); two items match when Jaccard >= ${FUZZY_JACCARD} and they share >= min(2, smaller set size) words; clusters are single-link (A~B, B~C puts A and C together)`;
+
+/** Do two content-word sets say "the same thing"? */
+export function similarWords(a: string[], b: string[]): boolean {
+  if (!a.length || !b.length) return false;
+  const setB = new Set(b);
+  const shared = a.filter(w => setB.has(w)).length;
+  const union = a.length + b.length - shared;
+  return shared >= Math.min(2, a.length, b.length) && shared / union >= FUZZY_JACCARD;
+}
+
+/** Single-link clustering via union-find; candidate pairs come from an inverted word index. */
+export function clusterWordSets(sets: string[][]): number[] {
+  const parent = sets.map((_, i) => i);
+  const find = (i: number): number => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+  const index = new Map<string, number[]>();
+  sets.forEach((ws, i) => { for (const w of ws) { const l = index.get(w) ?? []; l.push(i); index.set(w, l); } });
+  sets.forEach((ws, i) => {
+    const candidates = new Set<number>();
+    for (const w of ws) for (const j of index.get(w)!) if (j > i) candidates.add(j);
+    for (const j of candidates) {
+      if (find(i) !== find(j) && similarWords(ws, sets[j])) parent[find(j)] = find(i);
+    }
+  });
+  // Renumber roots to dense ids in first-appearance order (deterministic).
+  const ids = new Map<number, number>();
+  return sets.map((_, i) => { const r = find(i); if (!ids.has(r)) ids.set(r, ids.size); return ids.get(r)!; });
+}
+
+export interface Occurrence {
+  sessionKey: string;
+  project: string;
+  startedAt: number;
+  words: string[];
+}
+
+export interface FuzzyResult {
+  clusterOf: number[];
+  repeat: boolean[];
+  repeatSameProject: boolean[];
+  repeatOtherProject: boolean[];
+}
+
+/** For each item: is any member of its cluster in a strictly earlier, different session? */
+export function fuzzyRecurrence(items: Occurrence[]): FuzzyResult {
+  const clusterOf = clusterWordSets(items.map(i => i.words));
+  const members = new Map<number, number[]>();
+  clusterOf.forEach((c, k) => { const l = members.get(c) ?? []; l.push(k); members.set(c, l); });
+  const repeat = items.map(() => false), same = items.map(() => false), other = items.map(() => false);
+  items.forEach((it, k) => {
+    for (const j of members.get(clusterOf[k])!) {
+      const o = items[j];
+      if (o.sessionKey === it.sessionKey || !(o.startedAt < it.startedAt)) continue;
+      repeat[k] = true;
+      if (o.project !== UNKNOWN_PROJECT && it.project !== UNKNOWN_PROJECT) {
+        if (o.project === it.project) same[k] = true; else other[k] = true;
+      }
+    }
+  });
+  return { clusterOf, repeat, repeatSameProject: same, repeatOtherProject: other };
+}
+
+export interface ClusterSummary {
+  cluster: number;
+  members: number;
+  sessions: number;
+  knownProjects: number;
+  projects: string[];
+  sources: Source[];
+  examples: string[];
+}
+
+/** Clusters ordered by distinct sessions, then members, then id. */
+export function summarizeClusters(items: Array<{ sessionKey: string; source: Source; project: string; text: string }>, clusterOf: number[]): ClusterSummary[] {
+  const by = new Map<number, number[]>();
+  clusterOf.forEach((c, k) => { const l = by.get(c) ?? []; l.push(k); by.set(c, l); });
+  const out: ClusterSummary[] = [];
+  for (const [cluster, ks] of by) {
+    const projects = [...new Set(ks.map(k => items[k].project))].sort();
+    const examples: string[] = [];
+    for (const k of ks) { const t = items[k].text.replace(/\s+/g, ' ').trim().slice(0, 200); if (!examples.includes(t) && examples.length < 4) examples.push(t); }
+    out.push({
+      cluster, members: ks.length,
+      sessions: new Set(ks.map(k => items[k].sessionKey)).size,
+      knownProjects: projects.filter(p => p !== UNKNOWN_PROJECT).length,
+      projects, sources: [...new Set(ks.map(k => items[k].source))].sort() as Source[], examples,
+    });
+  }
+  return out.sort((a, b) => b.sessions - a.sessions || b.members - a.members || a.cluster - b.cluster);
+}
+
+// ------------------------------------------------------- eval workspace filter
+
+/**
+ * Project names created by this repo's own experiments (Runs 01-10 and the
+ * harness smoke test): paired arms, condition copies, smoke dirs. Their
+ * sessions are scripted prompts, not the user's voice. `memory` and
+ * `baseline` match the run condition names (7 one-turn sessions each in the
+ * first census); if you have a real project called that, use --include-eval.
+ */
+const EVAL_PROJECT = /^(arm-[a-z]-\d+|run-\d+-[a-z0-9-]+|amg-smoke-[a-z0-9]+|builder-[a-z]|baseline|memory|static-note|automatic-memory)$/;
+
+export function isEvalProject(project: string): boolean {
+  return project.startsWith('projects/') && EVAL_PROJECT.test(project.slice('projects/'.length));
+}
+
+// -------------------------------------------------------- standing instructions
+
+/** User turns longer than this are mostly pasted logs/specs; clauses from them are noise. */
+export const MAX_INSTRUCTION_TURN_CHARS = 1500;
+const MIN_CLAUSE_WORDS = 3, MAX_CLAUSE_WORDS = 25, MIN_CLAUSE_CONTENT = 2;
+/** Marks a clause that reads like a rule about HOW to work, not WHAT to build. */
+const DIRECTIVE = /\b(always|never|dont|do not|keep going|keep|make sure|ask|stop|continue|until|before|without|only|prefer|instead|avoid|remember|don t)\b/;
+
+/**
+ * Split a user turn into clauses: sentence punctuation, commas, semicolons,
+ * newlines, and " and "/" but "/" then ". "fix the pipeline and if you dont
+ * know please ask what is unclear" yields "if you dont know please ask what
+ * is unclear" as its own clause.
+ */
+export function splitClauses(text: string): string[] {
+  return text
+    .replace(/[‘’]/g, "'")
+    // Sentence punctuation splits only when followed by whitespace/end, so test.ts and v1.2 stay whole.
+    .split(/[.!?,]+(?=\s|$)|[;\n\r]+|\s+(?:and|but|then|also)\s+/i)
+    .map(c => c.replace(/\s+/g, ' ').trim())
+    .filter(c => { const n = c.split(' ').length; return n >= MIN_CLAUSE_WORDS && n <= MAX_CLAUSE_WORDS; });
+}
+
+export function isDirective(clause: string): boolean {
+  return DIRECTIVE.test(clause.toLowerCase().replace(/[‘’']/g, ''));
+}
+
+export interface InstructionCluster extends ClusterSummary {
+  directive: boolean;
+}
+
+export interface StandingInstructionReport {
+  method: string;
+  userTurnsScanned: number;
+  userTurnsSkippedAsPasted: number;
+  clauses: number;
+  clusters: number;
+  recurringClusters: number;
+  crossProjectClusters: number;
+  crossSourceClusters: number;
+  directiveRecurringClusters: number;
+  topCrossProject: InstructionCluster[];
+  topDirective: InstructionCluster[];
+  topRecurring: InstructionCluster[];
+}
+
+/** Recurring clauses across ALL user turns (not just pushback). Counted once per session per cluster. */
+export function standingInstructions(sessions: SessionTurns[]): StandingInstructionReport {
+  const items: Array<{ sessionKey: string; source: Source; project: string; text: string; words: string[] }> = [];
+  let scanned = 0, pasted = 0;
+  for (const s of sessions) {
+    for (const t of s.turns) {
+      if (t.role !== 'user') continue;
+      scanned++;
+      if (t.text.length > MAX_INSTRUCTION_TURN_CHARS) { pasted++; continue; }
+      for (const clause of splitClauses(t.text)) {
+        const words = contentWords(clause);
+        if (words.length >= MIN_CLAUSE_CONTENT) items.push({ sessionKey: `${s.source}:${s.sessionId}`, source: s.source, project: s.project, text: clause, words });
+      }
+    }
+  }
+  const clusterOf = clusterWordSets(items.map(i => i.words));
+  const directiveOf = new Map<number, boolean>();
+  items.forEach((it, k) => { if (isDirective(it.text)) directiveOf.set(clusterOf[k], true); });
+  const all: InstructionCluster[] = summarizeClusters(items, clusterOf).map(c => ({ ...c, directive: directiveOf.get(c.cluster) === true }));
+  const recurring = all.filter(c => c.sessions >= 2);
+  const cross = recurring.filter(c => c.knownProjects >= 2);
+  return {
+    method: `clauses of ${MIN_CLAUSE_WORDS}-${MAX_CLAUSE_WORDS} words with >= ${MIN_CLAUSE_CONTENT} content words, from user turns <= ${MAX_INSTRUCTION_TURN_CHARS} chars; ${FUZZY_METHOD}; recurring = cluster seen in >= 2 sessions; directive = any member matches an always/never/dont/ask/keep/until/... cue`,
+    userTurnsScanned: scanned,
+    userTurnsSkippedAsPasted: pasted,
+    clauses: items.length,
+    clusters: all.length,
+    recurringClusters: recurring.length,
+    crossProjectClusters: cross.length,
+    crossSourceClusters: recurring.filter(c => c.sources.length >= 2).length,
+    directiveRecurringClusters: recurring.filter(c => c.directive).length,
+    topCrossProject: cross.slice(0, 25),
+    topDirective: recurring.filter(c => c.directive).slice(0, 25),
+    topRecurring: recurring.slice(0, 25),
+  };
+}
+
+export function renderStandingInstructions(r: StandingInstructionReport): string {
+  const lines = [
+    '# Standing instructions: recurring clauses across sessions',
+    '',
+    `${r.recurringClusters} clusters recur in 2+ sessions (${r.crossProjectClusters} across projects, ${r.crossSourceClusters} across agents, ${r.directiveRecurringClusters} directive-shaped).`,
+    'Question to answer while reading: which of these are rules about how YOU like agents to work (personalization), and which are just the same task asked twice?',
+    '',
+  ];
+  const section = (title: string, cs: InstructionCluster[]) => {
+    lines.push(`## ${title}`, '');
+    if (!cs.length) lines.push('(none)', '');
+    for (const c of cs) {
+      lines.push(`- **cluster ${c.cluster}** · ${c.sessions} sessions · ${c.projects.join(', ')} · ${c.sources.join(', ')}${c.directive ? ' · directive' : ''}`);
+      for (const e of c.examples) lines.push(`  - "${e}"`);
+    }
+    lines.push('');
+  };
+  section('Across projects (the personalization signal)', r.topCrossProject);
+  section('Directive-shaped (rules about how to work)', r.topDirective);
+  section('Most recurring overall', r.topRecurring);
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------- recall check
+
+export interface RecallItem {
+  source: Source;
+  sessionId: string;
+  project: string;
+  turnIndex: number;
+  text: string;
+  previous: Turn;
+}
+
+/**
+ * User turns right after an agent turn that the detector did NOT flag,
+ * evenly spaced, up to perSource from each source. Reading them estimates
+ * how many real corrections the coarse patterns miss (recall), and shows
+ * whether a source with 0 corrections is quiet or mis-read.
+ */
+export function recallSample(sessions: SessionTurns[], perSource = 10): RecallItem[] {
+  const bySource = new Map<Source, RecallItem[]>();
+  for (const s of [...sessions].sort((a, b) => a.startedAt - b.startedAt || a.sessionId.localeCompare(b.sessionId))) {
+    s.turns.forEach((t, i) => {
+      const prev = s.turns[i - 1];
+      if (t.role !== 'user' || prev?.role !== 'agent' || isCorrection(t.text, true)) return;
+      const l = bySource.get(s.source) ?? [];
+      l.push({ source: s.source, sessionId: s.sessionId, project: s.project, turnIndex: i, text: t.text, previous: prev });
+      bySource.set(s.source, l);
+    });
+  }
+  const out: RecallItem[] = [];
+  for (const src of [...bySource.keys()].sort()) {
+    const l = bySource.get(src)!;
+    const n = Math.min(perSource, l.length), step = l.length / n;
+    for (let k = 0; k < n; k++) out.push(l[Math.floor(k * step)]);
+  }
+  return out;
 }
 
 // -------------------------------------------------------------------- sample
@@ -439,26 +779,48 @@ const oneLine = (s: string, max = 220) => {
   return flat.length > max ? flat.slice(0, max - 1) + '…' : flat;
 };
 
-export function renderSample(sample: CorrectionEvent[], totalEvents: number): string {
+export function renderSample(sample: CorrectionEvent[], totalEvents: number, recall: RecallItem[] = []): string {
   const lines = [
     '# Correction census: hand-label sample',
     '',
-    `${sample.length} of ${totalEvents} detected corrections, evenly spaced by session time.`,
-    'Mark each one: is it really a correction of the agent\'s previous turn? Precision = yes / labelled.',
+    `${sample.length} of ${totalEvents} detected corrections.`,
+    'Grouped by fuzzy cluster (same content words), so corrections that may say the same thing sit together.',
+    'For each one mark: is it really a correction? For grouped ones also mark: does it mean the same as the rest of its group?',
     '',
   ];
-  sample.forEach((e, k) => {
-    lines.push(`## ${k + 1}. ${e.source} · ${e.project} · session \`${e.sessionId}\` · turn ${e.turnIndex}`);
+  const entry = (e: CorrectionEvent, grouped: boolean) => {
+    lines.push(`### ${e.source} · ${e.project} · session \`${e.sessionId}\` · turn ${e.turnIndex}`);
     lines.push('');
     if (!e.context.length) lines.push('> (no preceding context)');
     for (const t of e.context) lines.push(`> **${t.role}:** ${oneLine(t.text)}`);
     lines.push(`> **USER (detected):** ${oneLine(e.text, 400)}`);
     lines.push('');
-    const flags = [e.matchable ? `signature \`${e.signature}\`` : 'content-free', e.repeat ? 'REPEAT' : null, e.repeatOtherProject ? 'cross-project' : null, e.withinSessionRepeat ? 'within-session' : null].filter(Boolean).join(' · ');
-    lines.push(`${flags}`);
+    const flags = [e.matchable ? `signature \`${e.signature}\`` : 'content-free', e.repeat ? 'EXACT REPEAT' : null, e.fuzzyRepeat ? 'FUZZY REPEAT' : null, e.fuzzyRepeatOtherProject ? 'cross-project' : null, e.withinSessionRepeat ? 'within-session' : null].filter(Boolean).join(' · ');
+    lines.push(flags, '');
+    lines.push(grouped ? '- [ ] real correction   - [ ] not a correction   - [ ] same meaning as its group' : '- [ ] real correction   - [ ] not a correction');
     lines.push('');
-    lines.push('- [ ] real correction   - [ ] not a correction');
-    lines.push('');
-  });
+  };
+  const groups = new Map<number, CorrectionEvent[]>();
+  for (const e of sample) { const g = groups.get(e.fuzzyCluster) ?? []; g.push(e); groups.set(e.fuzzyCluster, g); }
+  const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length || a[0] - b[0]);
+  const multi = ordered.filter(([, g]) => g.length >= 2), single = ordered.filter(([, g]) => g.length < 2);
+  lines.push(`## Groups that may be the same correction (${multi.length})`, '');
+  if (!multi.length) lines.push('(none)', '');
+  for (const [id, g] of multi) {
+    lines.push(`## Group ${id}: ${g.length} corrections in ${new Set(g.map(e => `${e.source}:${e.sessionId}`)).size} sessions`, '');
+    for (const e of g) entry(e, true);
+  }
+  lines.push(`## One-off corrections (${single.length})`, '');
+  for (const [, g] of single) entry(g[0], false);
+  if (recall.length) {
+    lines.push('## Recall check: turns the detector did NOT flag', '');
+    lines.push('User turns right after an agent turn, evenly spaced per source. Mark any that are really corrections: those are misses.', '');
+    for (const r of recall) {
+      lines.push(`### ${r.source} · ${r.project} · session \`${r.sessionId}\` · turn ${r.turnIndex}`, '');
+      lines.push(`> **agent:** ${oneLine(r.previous.text)}`);
+      lines.push(`> **USER (not flagged):** ${oneLine(r.text, 400)}`, '');
+      lines.push('- [ ] missed correction', '');
+    }
+  }
   return lines.join('\n');
 }

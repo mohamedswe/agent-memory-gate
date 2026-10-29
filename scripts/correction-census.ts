@@ -10,21 +10,25 @@
  *   Hermes       ~/.hermes/profiles/edge/state.db  (opened readonly)
  *
  * Writes (only):
- *   live-run/correction-census.json
- *   live-run/correction-census-sample.md
+ *   live-run/correction-census.json            all numbers (exact + fuzzy + standing instructions)
+ *   live-run/correction-census-sample.md       every correction, grouped by fuzzy cluster, + recall check
+ *   live-run/standing-instructions.md          recurring clauses across sessions, for review
  *
  * Usage:
  *   bun scripts/correction-census.ts [--codex <dir>] [--claude <dir>] [--hermes-db <file>]
- *                                    [--out-dir <dir>] [--sample <n>]
- * A missing source is reported and skipped, never fatal.
+ *                                    [--out-dir <dir>] [--sample <n|all>] [--recall <n per source>]
+ *                                    [--include-eval]
+ * --include-eval keeps this repo's own experiment workspaces (arm-*, run-NN-*, amg-smoke-*, ...),
+ * which are excluded by default. A missing source is reported and skipped, never fatal.
  */
 import { Database } from 'bun:sqlite';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { homedir } from 'node:os';
 import {
-  claudeCodeSessionTurns, codexSessionTurns, hermesSessionTurns, projectFor, renderSample,
-  runCensus, sampleEvents, type HermesRow, type SessionTurns,
+  claudeCodeSessionTurns, codexSessionTurns, hermesSessionTurns, isEvalProject, projectFor, recallSample,
+  renderSample, renderStandingInstructions, runCensus, sampleEvents, standingInstructions,
+  type HermesRow, type SessionTurns,
 } from '../src/correction-census';
 import { resolveSessionProject, type ProjectMap } from '../src/hermes-attribution';
 
@@ -39,7 +43,10 @@ const codexRoot = opt('--codex', join(home, '.codex', 'sessions'));
 const claudeRoot = opt('--claude', join(home, '.claude', 'projects'));
 const hermesDb = opt('--hermes-db', join(home, '.hermes', 'profiles', 'edge', 'state.db'));
 const outDir = opt('--out-dir', 'live-run');
-const sampleSize = Number(opt('--sample', '50')) || 50;
+const sampleOpt = opt('--sample', 'all');
+const sampleSize = sampleOpt === 'all' ? Infinity : Number(sampleOpt) || 50;
+const recallPerSource = Number(opt('--recall', '10')) || 10;
+const includeEval = args.includes('--include-eval');
 
 /** Recursive *.jsonl walk; skip(dirName) prunes directories. Sorted for determinism. */
 function walkJsonl(root: string, skipDir: (name: string) => boolean = () => false): string[] {
@@ -119,32 +126,59 @@ if (existsSync(hermesDb)) {
   } finally { db.close(); }
 } else notes.push(`hermes: not found at ${hermesDb} (skipped)`);
 
+// --- Eval-workspace filter
+const excludedEval: Record<string, number> = {};
+const kept = includeEval ? sessions : sessions.filter(s => {
+  if (!isEvalProject(s.project)) return true;
+  excludedEval[s.project] = (excludedEval[s.project] ?? 0) + 1;
+  return false;
+});
+const excludedCount = sessions.length - kept.length;
+notes.push(includeEval ? 'eval workspaces: included (--include-eval)' : `eval workspaces: excluded ${excludedCount} sessions`);
+
 // --- Census
-const { report, events } = runCensus(sessions);
-const sample = sampleEvents(events, sampleSize);
+const { report, events } = runCensus(kept);
+const instructions = standingInstructions(kept);
+const recall = recallSample(kept, recallPerSource);
+const sample = Number.isFinite(sampleSize) ? sampleEvents(events, sampleSize) : events;
 
 mkdirSync(outDir, { recursive: true });
 const jsonPath = join(outDir, 'correction-census.json');
 const mdPath = join(outDir, 'correction-census-sample.md');
-writeFileSync(jsonPath, JSON.stringify({ ...report, notes }, null, 2) + '\n');
-writeFileSync(mdPath, renderSample(sample, events.length) + '\n');
+const siPath = join(outDir, 'standing-instructions.md');
+writeFileSync(jsonPath, JSON.stringify({
+  version: 2, ...report,
+  excludedEvalSessions: { count: excludedCount, byProject: excludedEval },
+  standingInstructions: instructions,
+  recallCheck: { items: recall.length, perSource: recallPerSource },
+  notes,
+}, null, 2) + '\n');
+writeFileSync(mdPath, renderSample(sample, events.length, recall) + '\n');
+writeFileSync(siPath, renderStandingInstructions(instructions) + '\n');
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
-console.log('Repeated-correction census');
+const fz = report.fuzzy;
+console.log('Repeated-correction census (v2)');
 for (const n of notes) console.log(`  ${n}`);
 console.log(`  sessions scanned:        ${report.sessionsScanned}`);
 console.log(`  user turns:              ${report.userTurns}`);
 console.log(`  corrections detected:    ${report.correctionsDetected} (${report.contentFreeCorrections} content-free)`);
-console.log(`  distinct signatures:     ${report.distinctSignatures}`);
-console.log(`  repeated signatures:     ${report.repeatedSignatures} (${report.crossProjectSignatures} cross-project, ${report.crossSourceSignatures} cross-agent)`);
-console.log(`  repeated events:         ${report.repeatedEvents} (${report.repeatedEventsSameProject} same-project, ${report.repeatedEventsCrossProject} cross-project; ${report.withinSessionRepeatEvents} within-session)`);
-console.log(`  REPEATED-CORRECTION RATE ${pct(report.repeatedCorrectionRate)} (matchable only: ${pct(report.repeatedCorrectionRateMatchableOnly)}; cross-project: ${pct(report.crossProjectRepeatRate)})`);
+console.log('  EXACT matching');
+console.log(`    repeated signatures:   ${report.repeatedSignatures} (${report.crossProjectSignatures} cross-project, ${report.crossSourceSignatures} cross-agent)`);
+console.log(`    repeated events:       ${report.repeatedEvents} (${report.repeatedEventsSameProject} same-project, ${report.repeatedEventsCrossProject} cross-project; ${report.withinSessionRepeatEvents} within-session)`);
+console.log(`    rate:                  ${pct(report.repeatedCorrectionRate)} (cross-project ${pct(report.crossProjectRepeatRate)})`);
+console.log('  FUZZY matching (content words)');
+console.log(`    repeated clusters:     ${fz.repeatedClusters} (${fz.crossProjectClusters} cross-project, ${fz.crossSourceClusters} cross-agent)`);
+console.log(`    repeated events:       ${fz.repeatedEvents} (${fz.repeatedEventsSameProject} same-project, ${fz.repeatedEventsCrossProject} cross-project)`);
+console.log(`    rate:                  ${pct(fz.repeatedCorrectionRate)} (cross-project ${pct(fz.crossProjectRepeatRate)})`);
+console.log('  by source                sessions  turns  after-agent  corrections  exact  fuzzy');
 for (const [src, b] of Object.entries(report.bySource)) {
-  console.log(`    ${src.padEnd(12)} ${String(b.sessions).padStart(4)} sessions  ${String(b.corrections).padStart(4)} corrections  ${String(b.repeatEvents).padStart(4)} repeats  ${pct(b.repeatedCorrectionRate)}`);
+  console.log(`    ${src.padEnd(20)} ${String(b.sessions).padStart(8)} ${String(b.userTurns).padStart(6)} ${String(b.userTurnsAfterAgent).padStart(12)} ${String(b.corrections).padStart(12)} ${String(b.repeatEvents).padStart(6)} ${String(b.fuzzyRepeatEvents).padStart(6)}`);
 }
-if (report.topRepeatedSignatures.length) {
-  console.log('  top repeated:');
-  for (const s of report.topRepeatedSignatures.slice(0, 5)) console.log(`    ${String(s.sessions).padStart(3)} sessions  ${s.projects.length} projects  "${s.signature.slice(0, 70)}"`);
-}
+console.log('  STANDING INSTRUCTIONS (all user turns)');
+console.log(`    clauses:               ${instructions.clauses} from ${instructions.userTurnsScanned - instructions.userTurnsSkippedAsPasted} turns (${instructions.userTurnsSkippedAsPasted} long turns skipped as pasted)`);
+console.log(`    recurring clusters:    ${instructions.recurringClusters} (${instructions.crossProjectClusters} cross-project, ${instructions.crossSourceClusters} cross-agent, ${instructions.directiveRecurringClusters} directive)`);
+for (const c of instructions.topCrossProject.slice(0, 5)) console.log(`      ${String(c.sessions).padStart(3)} sessions ${c.knownProjects} projects  "${c.examples[0].slice(0, 70)}"`);
 console.log(`  wrote ${jsonPath}`);
-console.log(`  wrote ${mdPath} (${sample.length} events for hand-labelling)`);
+console.log(`  wrote ${mdPath} (${sample.length} corrections + ${recall.length} recall-check turns)`);
+console.log(`  wrote ${siPath}`);

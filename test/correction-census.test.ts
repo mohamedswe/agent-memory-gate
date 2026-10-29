@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test';
 import {
-  claudeCodeSessionTurns, codexSessionTurns, correctionSignature, detectCorrections, hermesSessionTurns,
-  isCorrection, isMatchableSignature, runCensus, sampleEvents, type SessionTurns,
+  claudeCodeSessionTurns, clusterWordSets, codexSessionTurns, contentWords, correctionSignature, detectCorrections,
+  fuzzyRecurrence, hermesSessionTurns, isCorrection, isDirective, isEvalProject, isMatchableSignature, recallSample,
+  runCensus, sampleEvents, similarWords, splitClauses, standingInstructions, stem, type SessionTurns,
 } from '../src/correction-census';
 
 // ---------------------------------------------------------------- detector
@@ -184,4 +185,115 @@ test('hermesSessionTurns orders by id and keeps assistant/tool rows as agent con
   expect(s.turns.map(t => t.role)).toEqual(['user', 'agent', 'user']);
   expect(s.startedAt).toBe(1791700000 * 1000);
   expect(detectCorrections(s)).toHaveLength(1);
+});
+
+// ------------------------------------------------------------- v2: fuzzy
+
+
+test('stem: crude suffixes collapse common variants', () => {
+  expect(stem('adding')).toBe('add');
+  expect(stem('added')).toBe('add');
+  expect(stem('comments')).toBe('comment');
+  expect(stem('stopping')).toBe('stop');
+  expect(stem('process')).toBe('process');
+  expect(stem('status')).toBe('status');
+});
+
+test('contentWords drops stopwords (including negation) and stems', () => {
+  expect(contentWords("Stop adding comments, please!")).toEqual(['add', 'comment', 'stop']);
+  expect(contentWords('no more comments')).toEqual(['comment']);
+});
+
+test('similarWords: rewordings match, unrelated corrections do not', () => {
+  expect(similarWords(contentWords('stop adding comments'), contentWords('stop adding so many comments'))).toBe(true);
+  expect(similarWords(contentWords('use pnpm instead'), contentWords('use pnpm not npm'))).toBe(true);
+  expect(similarWords(contentWords('fix the comment in the readme'), contentWords('no more comments'))).toBe(false);
+  expect(similarWords(contentWords('use pnpm instead'), contentWords('revert the migration'))).toBe(false);
+  expect(similarWords([], ['x'])).toBe(false);
+});
+
+test('clusterWordSets is single-link and deterministic', () => {
+  const ids = clusterWordSets([['a', 'b'], ['b', 'c'], ['x', 'y'], ['a', 'b', 'c']]);
+  expect(ids[0]).toBe(ids[3]);
+  expect(ids[1]).toBe(ids[3]);
+  expect(ids[2]).not.toBe(ids[0]);
+  expect(clusterWordSets([['a', 'b'], ['x', 'y']])).toEqual([0, 1]);
+});
+
+test('fuzzyRecurrence: only strictly earlier, different sessions count; projects are compared', () => {
+  const w = ['comment', 'stop'];
+  const r = fuzzyRecurrence([
+    { sessionKey: 's1', project: 'projects/a', startedAt: 1, words: w },
+    { sessionKey: 's1', project: 'projects/a', startedAt: 1, words: w },
+    { sessionKey: 's2', project: 'projects/b', startedAt: 2, words: w },
+    { sessionKey: 's3', project: 'unknown', startedAt: 3, words: w },
+  ]);
+  expect(r.repeat).toEqual([false, false, true, true]);
+  expect(r.repeatOtherProject).toEqual([false, false, true, false]);
+  expect(r.repeatSameProject).toEqual([false, false, false, false]);
+});
+
+test('runCensus: fuzzy catches the same correction in different words where exact does not', () => {
+  const { report } = runCensus([
+    session('codex', 'a', 'projects/alpha', 1, ['stop adding comments']),
+    session('hermes', 'b', 'projects/beta', 2, ["don't add so many comments"]),
+  ]);
+  expect(report.repeatedEvents).toBe(0);
+  expect(report.fuzzy.repeatedEvents).toBe(1);
+  expect(report.fuzzy.repeatedEventsCrossProject).toBe(1);
+  expect(report.fuzzy.crossProjectClusters).toBe(1);
+  expect(report.bySource.hermes.fuzzyRepeatEvents).toBe(1);
+  expect(report.bySource.codex.userTurnsAfterAgent).toBe(1);
+});
+
+// -------------------------------------------------------- v2: eval filter
+
+test('isEvalProject matches experiment workspaces only', () => {
+  for (const p of ['arm-a-1', 'arm-c-3', 'run-05-baseline', 'run-07-phase2', 'amg-smoke-kio5zg', 'builder-a', 'baseline', 'memory']) {
+    expect(isEvalProject(`projects/${p}`)).toBe(true);
+  }
+  for (const p of ['agent-memory-gate', 'memory-algorithm', 'insectflux-dev', 'software-auditor', 'run-fast']) {
+    expect(isEvalProject(`projects/${p}`)).toBe(false);
+  }
+  expect(isEvalProject('unknown')).toBe(false);
+});
+
+// ------------------------------------------------ v2: standing instructions
+
+test('splitClauses isolates a standing rule inside a task prompt', () => {
+  const clauses = splitClauses('ok pool.md has been updated fix the pipeline codex you know the vision and if you dont please ask what is unclear');
+  expect(clauses).toContain('if you dont please ask what is unclear');
+});
+
+test('splitClauses keeps file names and versions whole', () => {
+  expect(splitClauses('no, use bun scripts/test.ts. then run the v1.2 build')).toEqual(['use bun scripts/test.ts', 'run the v1.2 build']);
+});
+
+test('isDirective flags rules about how to work', () => {
+  expect(isDirective('please ask what is unclear')).toBe(true);
+  expect(isDirective('keep going until the tests pass')).toBe(true);
+  expect(isDirective('the parser handles nested json')).toBe(false);
+});
+
+test('standingInstructions: a rule repeated across projects is reported once per session', () => {
+  const mk = (id: string, project: string, t: number, text: string): SessionTurns =>
+    ({ source: 'codex', sessionId: id, project, startedAt: t, turns: [{ role: 'user', text }] });
+  const r = standingInstructions([
+    mk('a', 'projects/alpha', 1, 'build the importer. if anything is unclear ask me before guessing. ask me before guessing'),
+    mk('b', 'projects/beta', 2, 'fix the exporter, if something is unclear ask me before guessing'),
+    mk('c', 'projects/beta', 3, 'x'.repeat(2000)),
+  ]);
+  expect(r.userTurnsSkippedAsPasted).toBe(1);
+  expect(r.crossProjectClusters).toBe(1);
+  expect(r.topCrossProject[0].sessions).toBe(2);
+  expect(r.topCrossProject[0].directive).toBe(true);
+});
+
+// ------------------------------------------------------- v2: recall check
+
+test('recallSample returns only unflagged user turns after agent turns, capped per source', () => {
+  const s = session('claude-code', 'a', 'projects/a', 1, ['looks good', 'use pnpm instead', 'great, now the docs', 'ship it']);
+  const items = recallSample([s], 2);
+  expect(items).toHaveLength(2);
+  for (const i of items) { expect(isCorrection(i.text, true)).toBe(false); expect(i.previous.role).toBe('agent'); }
 });
