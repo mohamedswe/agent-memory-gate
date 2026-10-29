@@ -64,8 +64,8 @@ export function parseRollout(jsonl: string): Rollout {
     const id = String(p.id ?? '');
 
     const push = (event: RolloutEvent) => {
-      if (seenIds.has(id)) return; // wrapper lines and replays can repeat response items
-      seenIds.add(id);
+      const key=id?JSON.stringify(['item',id]):'callId' in event&&event.callId?JSON.stringify([event.kind,event.callId]):null;
+      if (key!==null) {if(seenIds.has(key))return;seenIds.add(key);}
       events.push(event);
     };
 

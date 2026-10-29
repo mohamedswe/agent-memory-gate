@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-10-27T14:55:42.491Z",
+  "kind": "Offline capture-fix verification, not a task-performance experiment",
+  "source": "Two original Run 09 onboarding rollouts; metadata project path overlaid onto their pinned package.json only",
+  "inputHashes": [
+    {
+      "session": "warmup-0",
+      "sha256": "6357894c64af7d52789f1ffb06ce78af2c3e9af07c4cae729e0d2b7ef1cd0b19"
+    },
+    {
+      "session": "warmup-1",
+      "sha256": "c6e6780710dc1234c35fdffd7258edaa5dab5b82c067bff4dc0cc9da1b497c8b"
+    }
+  ],
+  "originalLearnedRecords": 0,
+  "capturedRepeatedActions": 5,
+  "sourceSupportedTestProcedureCandidates": 1,
+  "previewPromotions": 0,
+  "duplicateCaptureChangedQueue": false,
+  "originalResultSha256": "19c36a87b2e53ab382b874d3b1c444e2a42e2156fde261634358fb572e096347",
+  "originalResultUnchanged": true,
+  "paidInferenceCalls": 0,
+  "candidates": [
+    {
+      "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"README.md\\\"\"}",
+      "counts": {
+        "userRepeats": 0,
+        "agentRediscoveries": 0,
+        "rawMentions": 2
+      },
+      "sourceSessions": [
+        "rollout-warmup-0.jsonl",
+        "rollout-warmup-1.jsonl"
+      ],
+      "sourceKeys": [
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content README.md; Get-Content package.json; Get-Content scripts/test.ts; Get-Content test/usage-ledger.test.ts'",
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath README.md'"
+      ]
+    },
+    {
+      "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"package.json\\\"\"}",
+      "counts": {
+        "userRepeats": 0,
+        "agentRediscoveries": 0,
+        "rawMentions": 2
+      },
+      "sourceSessions": [
+        "rollout-warmup-0.jsonl",
+        "rollout-warmup-1.jsonl"
+      ],
+      "sourceKeys": [
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content README.md; Get-Content package.json; Get-Content scripts/test.ts; Get-Content test/usage-ledger.test.ts'",
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath package.json'"
+      ]
+    },
+    {
+      "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"scripts/test.ts\\\"\"}",
+      "counts": {
+        "userRepeats": 0,
+        "agentRediscoveries": 0,
+        "rawMentions": 2
+      },
+      "sourceSessions": [
+        "rollout-warmup-0.jsonl",
+        "rollout-warmup-1.jsonl"
+      ],
+      "sourceKeys": [
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content README.md; Get-Content package.json; Get-Content scripts/test.ts; Get-Content test/usage-ledger.test.ts'",
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath scripts/test.ts'"
+      ]
+    },
+    {
+      "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"test/usage-ledger.test.ts\\\"\"}",
+      "counts": {
+        "userRepeats": 0,
+        "agentRediscoveries": 0,
+        "rawMentions": 2
+      },
+      "sourceSessions": [
+        "rollout-warmup-0.jsonl",
+        "rollout-warmup-1.jsonl"
+      ],
+      "sourceKeys": [
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content README.md; Get-Content package.json; Get-Content scripts/test.ts; Get-Content test/usage-ledger.test.ts'",
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath test/usage-ledger.test.ts'"
+      ]
+    },
+    {
+      "key": "tool:exec_command:action-v1={\"command\":\"bun scripts/test.ts\"}",
+      "counts": {
+        "userRepeats": 0,
+        "agentRediscoveries": 0,
+        "rawMentions": 2
+      },
+      "sourceSessions": [
+        "rollout-warmup-0.jsonl",
+        "rollout-warmup-1.jsonl"
+      ],
+      "sourceKeys": [
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'bun scripts/test.ts'",
+        "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'bun run test'"
+      ]
+    }
+  ],
+  "limits": [
+    "Candidates require review before becoming durable memories.",
+    "Four repeated file reads are not automatically useful lessons.",
+    "No new claim about downstream development benefit is made."
+  ]
+}

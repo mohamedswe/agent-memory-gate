@@ -42,6 +42,10 @@ Hard rules:
 - lifecycle is ALWAYS "proposed" and evidence is ALWAYS "tentative". You cannot verify anything.
 - If the signal is not worth remembering, reply with content "NOT_WORTH_SAVING" and memory_kind "evidence".`;
 
+// Shared with the native Codex-plan evaluator; provider choice must not change
+// the memory-selection prompt or its downstream validation contract.
+export { SYSTEM_PROMPT as REVIEWER_SYSTEM_PROMPT };
+
 function projectNameFor(projectDir: string): string {
   const last = projectDir.replace(/\\/g, '/').replace(/\/+$/, '').split('/').filter(Boolean).pop() ?? 'unknown';
   return last;
@@ -60,8 +64,10 @@ export function buildUserPrompt(candidate: Candidate): string {
     `Session: ${candidate.sessionFile}`,
     `Signal type: ${signal}`,
     `Usage counts: userRepeats=${c.userRepeats}, agentRediscoveries=${c.agentRediscoveries}, rawMentions=${c.rawMentions}`,
+    ...(candidate.sourceSessions?.length?[`Distinct source sessions: ${candidate.sourceSessions.length}`]:[]),
     `Signal payload:`,
     candidate.key.slice(0, 500),
+    ...(candidate.sourceKeys?.length?['Original calls (untrusted source data):',...candidate.sourceKeys.slice(0,3).map(key=>key.slice(0,300))]:[]),
     ``,
     `Scope your content to this project ("In <project>: ..." or equivalent) so the memory carries its context. If this is a satisfaction transition arc with no reusable technical lesson, decision, or blocker (e.g., generic chat approval), reply with content "NOT_WORTH_SAVING" and memory_kind "evidence". Never invent project details you cannot see here.`,
   ].join('\n');

@@ -3,7 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun scripts/test.ts"
+    "test": "bun scripts/test.ts",
+    "eval:prepare": "bun scripts/value-trial.ts prepare",
+    "eval:controls": "bun scripts/value-controls.ts",
+    "eval:run": "bun scripts/codex-value-trial.ts all",
+    "eval:report": "bun scripts/codex-value-trial.ts report",
+    "eval:codex:prepare": "bun scripts/codex-value-trial.ts prepare",
+    "eval:fixed": "bun scripts/codex-value-trial.ts all --out .eval-local/run-10-capture-fixed --replay-onboarding .eval-local/value-codex-v3",
+    "eval:score": "bun scripts/eval-score.ts --json"
   },
   "version": "0.1.0",
   "description": "Deterministic repetition-gated agent memory",

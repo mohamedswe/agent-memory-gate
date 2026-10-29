@@ -29,8 +29,6 @@ import { homedir } from 'node:os';
 import { CaptureCursor, cursorPath } from '../src/capture-cursor';
 import { captureSession } from '../src/session-capture';
 import { extractUserTurns, buildSatisfactionJob } from '../src/session-trajectory';
-import { parseRollout, feedLedger } from '../src/rollout-reader';
-import { UsageLedger } from '../src/usage-ledger';
 import { CrossSessionLedger } from '../src/cross-session-ledger';
 import { redactCandidates } from '../src/redaction-gate';
 
@@ -55,6 +53,8 @@ interface JsonQueueLine {
   projectDir: string;
   key: string;
   counts: { userRepeats: number; agentRediscoveries: number; rawMentions: number };
+  sourceKeys?: string[];
+  sourceSessions?: string[];
 }
 
 function walkJsonl(dir: string, out: string[] = []): string[] {
@@ -70,7 +70,7 @@ function walkJsonl(dir: string, out: string[] = []): string[] {
 
 const storeDir = dirname(queuePath);
 const cursor = new CaptureCursor(cursorPath(storeDir));
-const crossSession = new CrossSessionLedger(join(storeDir, 'cross-session-ledger.json'));
+const crossSession = new CrossSessionLedger(join(storeDir, 'cross-session-ledger.json'),{persist:!dryRun});
 
 const files = walkJsonl(sessionsRoot);
 let newFiles = 0, quietFiles = 0;
@@ -104,13 +104,9 @@ for (const f of files) {
 
   // Lane 1b: cross-session observation — EVERY raw key this session saw,
   // observed into the project ledger (idempotent per session).
-  const rollout = parseRollout(readFileSync(f, 'utf-8'));
-  const projectDir = rollout.meta.cwd ?? '';
-  const ledger = new UsageLedger();
-  feedLedger(ledger, rollout);
-  const rawKeys: string[] = ledger.rawKeys();
-  if (projectDir && !dryRun) {
-    for (const key of rawKeys) crossSession.observe(projectDir, key, f);
+  const projectDir = result.projectDir;
+  if (projectDir) {
+    for (const observation of result.observedKeys) crossSession.observe(projectDir, observation.key, f, observation.sourceKeys);
   }
   // keys that NOW cross the threshold (>=2 distinct sessions, same project,
   // not yet promoted) become candidates with cross-session provenance
@@ -121,6 +117,8 @@ for (const f of files) {
         sessionFile: f,
         projectDir,
         key,
+        sourceKeys: [...new Set(crossSession.sourcesFor(projectDir,key).flatMap(s=>s.sourceKeys))],
+        sourceSessions: crossSession.sourcesFor(projectDir,key).map(s=>s.sessionFile),
         counts: {
           userRepeats: 0,
           agentRediscoveries: 0,
@@ -132,7 +130,7 @@ for (const f of files) {
   if (result.queued.length === 0 && result.excluded.length === 0 && !hasJob && crossCandidates.passed.length === 0) quietFiles++;
   else newFiles++;
   queued += result.queued.length;
-  excluded += result.excluded.length;
+  excluded += result.excluded.length + crossCandidates.excluded.length;
   jobs += hasJob ? 1 : 0;
   crossQueued += crossCandidates.passed.length;
 
@@ -148,6 +146,7 @@ for (const f of files) {
         projectDir: c.projectDir,
         key: c.key,
         counts: c.counts,
+        ...(c.sourceKeys?{sourceKeys:c.sourceKeys}:{}),
       };
       appendFileSync(queuePath, JSON.stringify(line) + '\n');
     }
@@ -160,22 +159,26 @@ for (const f of files) {
         projectDir: c.projectDir,
         key: c.key,
         counts: c.counts,
+        sourceKeys:c.sourceKeys,
+        sourceSessions:c.sourceSessions,
         crossSession: true,
       }) + '\n');
       crossSession.markPromoted(c.projectDir, c.key);
     }
-    for (const x of result.excluded) {
+    for (const x of [...result.excluded,...crossCandidates.excluded]) {
       appendFileSync(queuePath, JSON.stringify({
         queuedAt: new Date().toISOString(),
         sessionFile: x.candidate.sessionFile,
         projectDir: x.candidate.projectDir,
         key: x.candidate.key,
         counts: x.candidate.counts,
+        sourceKeys:x.candidate.sourceKeys,
         excluded: x.reason,
       }) + '\n');
     }
     cursor.markProcessed(f);
   }
+  if(dryRun)for(const c of crossCandidates.passed)crossSession.markPromoted(c.projectDir,c.key);
   if (dryRun) console.log(`[dry] ${f}: queued=${result.queued.length} excluded=${result.excluded.length} crossQueued=${crossCandidates.passed.length} satisfactionJob=${hasJob ? 'yes' : 'no'} project=${result.projectDir}`);
 }
 

@@ -1,0 +1,124 @@
+{
+  "label": "Exploratory, offline, post-observation normalization replay; not a measured treatment",
+  "originalUniqueCommandKeys": 7,
+  "originalRepeatedCommandKeys": 0,
+  "hypotheticalRepeatedActions": 5,
+  "repeated": [
+    {
+      "identity": "read-file:README.md",
+      "sessions": [
+        "warmup-0",
+        "warmup-1"
+      ]
+    },
+    {
+      "identity": "read-file:package.json",
+      "sessions": [
+        "warmup-0",
+        "warmup-1"
+      ]
+    },
+    {
+      "identity": "read-file:scripts/test.ts",
+      "sessions": [
+        "warmup-0",
+        "warmup-1"
+      ]
+    },
+    {
+      "identity": "read-file:test/usage-ledger.test.ts",
+      "sessions": [
+        "warmup-0",
+        "warmup-1"
+      ]
+    },
+    {
+      "identity": "package-script:test:bun scripts/test.ts",
+      "sessions": [
+        "warmup-0",
+        "warmup-1"
+      ]
+    }
+  ],
+  "transformations": [
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content README.md; Get-Content package.json; Get-Content scripts/test.ts; Get-Content test/usage-ledger.test.ts'",
+      "sessions": [
+        "warmup-0"
+      ],
+      "identities": [
+        "read-file:README.md",
+        "read-file:package.json",
+        "read-file:scripts/test.ts",
+        "read-file:test/usage-ledger.test.ts"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'bun scripts/test.ts'",
+      "sessions": [
+        "warmup-0"
+      ],
+      "identities": [
+        "package-script:test:bun scripts/test.ts"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath test/usage-ledger.test.ts'",
+      "sessions": [
+        "warmup-1"
+      ],
+      "identities": [
+        "read-file:test/usage-ledger.test.ts"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath package.json'",
+      "sessions": [
+        "warmup-1"
+      ],
+      "identities": [
+        "read-file:package.json"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath scripts/test.ts'",
+      "sessions": [
+        "warmup-1"
+      ],
+      "identities": [
+        "read-file:scripts/test.ts"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'Get-Content -LiteralPath README.md'",
+      "sessions": [
+        "warmup-1"
+      ],
+      "identities": [
+        "read-file:README.md"
+      ],
+      "supported": true
+    },
+    {
+      "original": "tool:exec_command:cmd=\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\" -Command 'bun run test'",
+      "sessions": [
+        "warmup-1"
+      ],
+      "identities": [
+        "package-script:test:bun scripts/test.ts"
+      ],
+      "supported": true
+    }
+  ],
+  "limitations": [
+    "Only simple observed read commands and the repo-declared test-script alias are handled.",
+    "Repeated actions are candidates, not validated useful memories.",
+    "No downstream inference, recall, or development improvement has been evaluated.",
+    "The active nine-run treatment remains unchanged and empty."
+  ]
+}

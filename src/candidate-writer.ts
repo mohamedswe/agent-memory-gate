@@ -47,6 +47,8 @@ export async function writeCandidateRecord(
     crossBrainEligible: false,
     evidencePointers: [
       `usage:userRepeats=${candidate.counts.userRepeats}:agentRediscoveries=${candidate.counts.agentRediscoveries}:rawMentions=${candidate.counts.rawMentions}`,
+      ...(candidate.sourceSessions??[]).map(session=>`source-session:${session}`),
+      ...(candidate.sourceKeys??[]).map(key=>`source-call:${key}`),
     ],
   });
 

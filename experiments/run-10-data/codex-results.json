@@ -1,0 +1,597 @@
+{
+  "generatedAt": "2026-10-27T15:59:29.559Z",
+  "status": "complete",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "billing": "chatgpt-plan",
+  "actualCostUsd": null,
+  "completedRuns": 9,
+  "plannedRuns": 9,
+  "memoryFormation": {
+    "learnedRecords": 1,
+    "reviewedCandidates": 5,
+    "primaryTokens": 85996,
+    "totalTokens": 198508,
+    "newReviewTokens": 64474,
+    "reusedOnboardingTokens": 21522,
+    "manipulationCheck": "PASSED_SOURCE_SUPPORTED_PROCEDURE",
+    "readiness": {
+      "ready": true,
+      "expectedProcedure": "bun scripts/test.ts",
+      "scope": "Known onboarding test procedure backed by two source sessions"
+    },
+    "records": [
+      {
+        "slug": "records/732cadf0-9d09-49b1-98be-58088cf773a2",
+        "kind": "procedure",
+        "content": "In project: tests have been invoked with `bun scripts/test.ts` and `bun run test`.",
+        "lifecycle": "proposed",
+        "evidence": "tentative",
+        "currency": "active"
+      }
+    ],
+    "reviewOutcomes": [
+      {
+        "key": "tool:exec_command:action-v1={\"command\":\"bun scripts/test.ts\"}",
+        "sourceSessions": [
+          "warmup-0",
+          "warmup-1"
+        ],
+        "output": {
+          "memory_kind": "procedure",
+          "content": "In project: tests have been invoked with `bun scripts/test.ts` and `bun run test`.",
+          "lifecycle": "proposed",
+          "evidence": "tentative",
+          "justification": "Records candidate test commands from two sessions; their success and equivalence are unverified."
+        }
+      },
+      {
+        "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"package.json\\\"\"}",
+        "sourceSessions": [
+          "warmup-0",
+          "warmup-1"
+        ],
+        "output": {
+          "memory_kind": "evidence",
+          "content": "NOT_WORTH_SAVING",
+          "lifecycle": "proposed",
+          "evidence": "tentative",
+          "justification": "Repeatedly reading package.json is routine inspection and reveals no reusable project fact, procedure, decision, or blocker."
+        }
+      },
+      {
+        "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"README.md\\\"\"}",
+        "sourceSessions": [
+          "warmup-0",
+          "warmup-1"
+        ],
+        "output": {
+          "memory_kind": "evidence",
+          "content": "NOT_WORTH_SAVING",
+          "lifecycle": "proposed",
+          "evidence": "tentative",
+          "justification": "Repeatedly reading README.md is routine exploration and reveals no durable project knowledge or reusable procedure."
+        }
+      },
+      {
+        "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"scripts/test.ts\\\"\"}",
+        "sourceSessions": [
+          "warmup-0",
+          "warmup-1"
+        ],
+        "output": {
+          "memory_kind": "evidence",
+          "content": "NOT_WORTH_SAVING",
+          "lifecycle": "proposed",
+          "evidence": "tentative",
+          "justification": "Repeatedly reading scripts/test.ts reveals no reusable project fact, procedure, decision, or blocker."
+        }
+      },
+      {
+        "key": "tool:exec_command:action-v1={\"command\":\"Get-Content -LiteralPath \\\"test/usage-ledger.test.ts\\\"\"}",
+        "sourceSessions": [
+          "warmup-0",
+          "warmup-1"
+        ],
+        "output": {
+          "memory_kind": "evidence",
+          "content": "NOT_WORTH_SAVING",
+          "lifecycle": "proposed",
+          "evidence": "tentative",
+          "justification": "Repeatedly reading a test file does not establish a reusable project fact, procedure, decision, or blocker."
+        }
+      }
+    ],
+    "trainingReplay": {
+      "root": ".eval-local/value-codex-v3",
+      "manifestHash": "2e8d41b30d3d1bf970c47b58ef0c17bff7a7554335d6358e24c9bcf48fd56b4e",
+      "inputs": [
+        {
+          "session": "warmup-0",
+          "rolloutHash": "6357894c64af7d52789f1ffb06ce78af2c3e9af07c4cae729e0d2b7ef1cd0b19",
+          "eventsHash": "9aa4b86baf99ad98f150715ec79ecd7073301fe0c404526f3b961d476de95a7e",
+          "resultHash": "7f40b95ea28d926421c66cf008e9a194f4abf3c0ec46edfc5152780dbe6554d7"
+        },
+        {
+          "session": "warmup-1",
+          "rolloutHash": "c6e6780710dc1234c35fdffd7258edaa5dab5b82c067bff4dc0cc9da1b497c8b",
+          "eventsHash": "13b3289171b4358254b0f3a63f9f936d68ffca026221b849b94c739aa347aa8a",
+          "resultHash": "7bfa4733dc8d755927bf02c6a3a17ac22eb3b84a4dbf597716ac6c90b0cda063"
+        }
+      ]
+    }
+  },
+  "summary": [
+    {
+      "condition": "baseline",
+      "runs": 3,
+      "accepted": 3,
+      "executionTokens": 86519,
+      "formationTokens": 0,
+      "tokensPerAccepted": 28839.666666666668,
+      "executionTokensPerAccepted": 28839.666666666668,
+      "newFormationTokens": 0,
+      "reusedOnboardingTokens": 0,
+      "totalInputTokens": 508947,
+      "outputTokens": 9316,
+      "elapsedSeconds": 307.80899999999997,
+      "toolCalls": 24,
+      "actualCostUsd": null
+    },
+    {
+      "condition": "note",
+      "runs": 3,
+      "accepted": 3,
+      "executionTokens": 116826,
+      "formationTokens": 0,
+      "tokensPerAccepted": 38942,
+      "executionTokensPerAccepted": 38942,
+      "newFormationTokens": 0,
+      "reusedOnboardingTokens": 0,
+      "totalInputTokens": 562408,
+      "outputTokens": 8306,
+      "elapsedSeconds": 279.884,
+      "toolCalls": 25,
+      "actualCostUsd": null
+    },
+    {
+      "condition": "memory",
+      "runs": 3,
+      "accepted": 3,
+      "executionTokens": 102835,
+      "formationTokens": 85996,
+      "tokensPerAccepted": 62943.666666666664,
+      "executionTokensPerAccepted": 34278.333333333336,
+      "newFormationTokens": 64474,
+      "reusedOnboardingTokens": 21522,
+      "totalInputTokens": 524088,
+      "outputTokens": 9339,
+      "elapsedSeconds": 311.85,
+      "toolCalls": 26,
+      "actualCostUsd": null
+    }
+  ],
+  "rows": [
+    {
+      "id": "518042820241",
+      "task": "neutral-recovery",
+      "condition": "memory",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 154735,
+        "cached": 122496,
+        "uncached": 32239,
+        "output": 2257,
+        "reasoning": 269,
+        "total": 156992
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 82416,
+      "executedShellCommands": 7,
+      "fileChangeEvents": 2,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 6,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-transitions-neutral-recovery.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-transitions.ts",
+        "test/satisfaction-transitions-neutral-recovery.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "90be8e91b7b0f8a290d9a7ad23048f11e177b4d2833c37c8898fe4354089ad66",
+      "contextHash": "991a651d51160c0bec6f888641f6515aec2e12e5b52f2f5da6ee4998c994de8c",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "64d730c9e0cd",
+      "task": "neutral-recovery",
+      "condition": "baseline",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 211915,
+        "cached": 175872,
+        "uncached": 36043,
+        "output": 3160,
+        "reasoning": 859,
+        "total": 215075
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 117014,
+      "executedShellCommands": 9,
+      "fileChangeEvents": 2,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 6,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-transitions-neutral.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-transitions.ts",
+        "test/satisfaction-transitions-neutral.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "befbd62463345215c9b928ee0a7a9754337c94041431ce73f85b44c8ee5dd085",
+      "contextHash": "bc6a7ce60b847c96c393c06102c55ce193f82a467c68b4d41bbcd7674a39b879",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "e4a0b14c65b9",
+      "task": "neutral-recovery",
+      "condition": "note",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 172733,
+        "cached": 141952,
+        "uncached": 30781,
+        "output": 2249,
+        "reasoning": 246,
+        "total": 174982
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 75269,
+      "executedShellCommands": 7,
+      "fileChangeEvents": 2,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 6,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-transitions-neutral.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-transitions.ts",
+        "test/satisfaction-transitions-neutral.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "1ca879c26d834b18848f7dfa36b3b8ae65347e07c588ba424379d944f31ee506",
+      "contextHash": "71f9361b1c807e336bbe3209b071cec020a2fa90ee7ee76cfa2807b8545ccf38",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "c77ec2097092",
+      "task": "idless-rollout",
+      "condition": "baseline",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 157115,
+        "cached": 130688,
+        "uncached": 26427,
+        "output": 3367,
+        "reasoning": 640,
+        "total": 160482
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 109898,
+      "executedShellCommands": 8,
+      "fileChangeEvents": 0,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/rollout-reader-missing-ids.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/rollout-reader.ts",
+        "test/rollout-reader-missing-ids.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "62730a431b7c7626dfe0deb931211cac83344d7e9006a2dade86bbf286b90f96",
+      "contextHash": "bc6a7ce60b847c96c393c06102c55ce193f82a467c68b4d41bbcd7674a39b879",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "f16ed4dad706",
+      "task": "idless-rollout",
+      "condition": "note",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 191786,
+        "cached": 154368,
+        "uncached": 37418,
+        "output": 2731,
+        "reasoning": 472,
+        "total": 194517
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 107724,
+      "executedShellCommands": 8,
+      "fileChangeEvents": 2,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/rollout-reader-missing-id.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/rollout-reader.ts",
+        "test/rollout-reader-missing-id.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "aebe7edc3552bbeac8840a5f534d260eec204b967c395c9f4c59ccf8513b14b7",
+      "contextHash": "71f9361b1c807e336bbe3209b071cec020a2fa90ee7ee76cfa2807b8545ccf38",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "0ce0b0d30f5a",
+      "task": "idless-rollout",
+      "condition": "memory",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 151242,
+        "cached": 115328,
+        "uncached": 35914,
+        "output": 2901,
+        "reasoning": 441,
+        "total": 154143
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 85817,
+      "executedShellCommands": 8,
+      "fileChangeEvents": 1,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/rollout-reader-missing-id.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/rollout-reader.ts",
+        "test/rollout-reader-missing-id.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "12d8bff757a7cb5b7281176e52e5b37ec4d67aeac8ea6e150f9ab564b30f7263",
+      "contextHash": "991a651d51160c0bec6f888641f6515aec2e12e5b52f2f5da6ee4998c994de8c",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "18c44822fa09",
+      "task": "strict-verdict-set",
+      "condition": "note",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 197889,
+        "cached": 157568,
+        "uncached": 40321,
+        "output": 3326,
+        "reasoning": 685,
+        "total": 201215
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 96891,
+      "executedShellCommands": 10,
+      "fileChangeEvents": 0,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-classifier-strict.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-classifier.ts",
+        "test/satisfaction-classifier-strict.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "b1e317c16429af4a98f9264d1029ec5fd016a90b52687cee6fbe4314e7c7e15b",
+      "contextHash": "71f9361b1c807e336bbe3209b071cec020a2fa90ee7ee76cfa2807b8545ccf38",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "ff750e0e99a3",
+      "task": "strict-verdict-set",
+      "condition": "memory",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 218111,
+        "cached": 192768,
+        "uncached": 25343,
+        "output": 4181,
+        "reasoning": 1085,
+        "total": 222292
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 143617,
+      "executedShellCommands": 11,
+      "fileChangeEvents": 3,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-classifier-exact-turns.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-classifier.ts",
+        "test/satisfaction-classifier-exact-turns.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "393680f5a734345d07aef873ce5221dedc1e5a63a5ef398c8fc8ba75b93e7cda",
+      "contextHash": "991a651d51160c0bec6f888641f6515aec2e12e5b52f2f5da6ee4998c994de8c",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    },
+    {
+      "id": "8bbdf5c326f3",
+      "task": "strict-verdict-set",
+      "condition": "baseline",
+      "status": "completed",
+      "provisionallyAccepted": true,
+      "usage": {
+        "input": 139917,
+        "cached": 125184,
+        "uncached": 14733,
+        "output": 2789,
+        "reasoning": 405,
+        "total": 142706
+      },
+      "accounting": "per-turn",
+      "elapsedMs": 80897,
+      "executedShellCommands": 7,
+      "fileChangeEvents": 0,
+      "hidden": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0
+      },
+      "regressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0
+      },
+      "addedRegressionTests": [
+        "test/satisfaction-classifier-coverage.test.ts"
+      ],
+      "addedTestsPassed": true,
+      "changed": [
+        "src/satisfaction-classifier.ts",
+        "test/satisfaction-classifier-coverage.test.ts"
+      ],
+      "deleted": [],
+      "forbiddenChanges": [],
+      "patchHash": "a1a7a780da2cfc287b7bd07b9e4975939669687dd0a643ff35d4ec30fecc5bb1",
+      "contextHash": "bc6a7ce60b847c96c393c06102c55ce193f82a467c68b4d41bbcd7674a39b879",
+      "parentGitMetadataObserved": false,
+      "independentHumanReview": "not performed",
+      "actualCostUsd": null
+    }
+  ],
+  "setupDiagnostics": {
+    "sessions": 0,
+    "primaryTokens": 0,
+    "totalTokens": 0,
+    "note": "Earlier permission diagnostics, excluded from valid formation and measured runs; generic connectivity probes and developer setup effort are not included."
+  },
+  "interpretation": {
+    "causalMemoryBenefitEstablished": false,
+    "reasons": [
+      "Only one attempt per condition across three selected defects; model and cache variability are uncontrolled.",
+      "Compared with Run 09, Git isolation and condition ordering also changed; cross-cohort deltas do not isolate normalization alone.",
+      "Automated test acceptance is provisional and is not independent human review."
+    ],
+    "commandMetric": "Executed shell commands; it is not a count of every native tool invocation.",
+    "dollarMetric": "Unavailable under the ChatGPT/Codex plan; tokens are not billed-credit estimates."
+  },
+  "originalHarnessVerified": true,
+  "acceptanceFilesVerified": true,
+  "postTrialHardening": "Git-root isolation and discovery ceilings were applied before all measured runs.",
+  "descriptiveComparison": {
+    "fullTokensChangeFraction": 1.182537939643315,
+    "executionOnlyChangeFraction": 0.18858285463308633,
+    "practicalThresholdMet": false,
+    "note": "Descriptive, one attempt per task-condition; not a statistical or general productivity claim."
+  }
+}

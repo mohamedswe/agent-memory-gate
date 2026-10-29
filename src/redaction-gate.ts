@@ -16,6 +16,8 @@ export interface Candidate {
   projectDir: string;
   key: string;
   counts: CandidateCounts;
+  sourceKeys?: string[];
+  sourceSessions?: string[];
 }
 
 export interface ExcludedCandidate {
@@ -44,7 +46,7 @@ const SECRET_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /(api_key|apikey|token|password|passwd|secret)["']?\s*[:=]\s*["']?[^\s"'&]{6,}/i, label: 'credential assignment' },
 ];
 
-const CREDENTIAL_PATH = /[\\/]credentials[\\/]/i;
+const CREDENTIAL_PATH = /(?:^|[\s"'=:(]|[\\/])credentials[\\/]/i;
 
 export function redactCandidates(
   input: Candidate[],
@@ -62,11 +64,12 @@ export function redactCandidates(
 
     // Secret gate: fail-closed on any secret-shaped content.
     let excludedReason: string | null = null;
-    if (CREDENTIAL_PATH.test(candidate.key)) {
+    const source=[candidate.key,...(candidate.sourceKeys??[])].join('\n');
+    if (CREDENTIAL_PATH.test(source)) {
       excludedReason = 'credential path in key';
     } else {
       for (const { pattern, label } of SECRET_PATTERNS) {
-        if (pattern.test(candidate.key)) {
+        if (pattern.test(source)) {
           excludedReason = `secret shape: ${label}`;
           break;
         }

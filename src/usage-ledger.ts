@@ -4,6 +4,8 @@
  * repeatedly re-derived knowledge can be gated into long-term memory.
  * In-memory only, deterministic, no inference, no persistence.
  */
+import { commandActionKeys, type CommandContext } from './command-identity';
+import { isSystemInjected } from './injection-filter';
 
 export interface UsageCounts {
   userRepeats: number;
@@ -15,6 +17,7 @@ export interface PromotionCandidate {
   key: string;
   counts: UsageCounts;
   firstSeenText: string;
+  sourceKeys?: string[];
 }
 
 /** Deterministic normalization: case-fold, collapse whitespace, strip punctuation. */
@@ -26,9 +29,9 @@ function normalizeKey(text: string): string {
     .trim();
 }
 
-/** Arg normalization: paths/URLs keep their punctuation; only whitespace is collapsed. */
+/** Unknown arguments retain exact content; shell normalization is separate. */
 function normalizeArg(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
+  return value;
 }
 
 /** Stable, sorted-key JSON for nested args — never "[object Object]". */
@@ -68,7 +71,11 @@ function toolCallKey(tool: string, args: Record<string, unknown>): string {
 }
 
 export class UsageLedger {
-  private readonly entries = new Map<string, { counts: UsageCounts; firstSeenText: string }>();
+  private readonly entries = new Map<string, { counts: UsageCounts; firstSeenText: string; sourceKeys?: Set<string> }>();
+  private readonly context: CommandContext;
+  constructor(context: CommandContext = {}) {
+    this.context={...context,packageScripts:context.packageScripts?{...context.packageScripts}:undefined};
+  }
 
   /** Record a user/caller mention of a piece of information. */
   recordUserMention(text: string): void {
@@ -87,18 +94,15 @@ export class UsageLedger {
 
   /** Record the agent performing a tool call; identical effective calls count as rediscoveries. */
   recordToolCall(tool: string, args: Record<string, unknown>): void {
-    const key = toolCallKey(tool, args);
-    const entry = this.entries.get(key);
-    if (entry) {
-      entry.counts.agentRediscoveries += 1;
-      entry.counts.rawMentions += 1;
-    } else {
-      this.entries.set(key, {
-        counts: { userRepeats: 0, agentRediscoveries: 1, rawMentions: 1 },
-        firstSeenText: key,
-      });
+    const original=toolCallKey(tool,args);
+    for(const key of commandActionKeys(tool,args,this.context)??[original]) {
+      const entry=this.entries.get(key);
+      if(entry){entry.counts.agentRediscoveries++;entry.counts.rawMentions++;entry.sourceKeys??=new Set();entry.sourceKeys.add(original);}
+      else this.entries.set(key,{counts:{userRepeats:0,agentRediscoveries:1,rawMentions:1},firstSeenText:original,sourceKeys:new Set([original])});
     }
   }
+
+  sourceKeysFor(key: string): string[] { return [...(this.entries.get(key)?.sourceKeys??[])]; }
 
   /** Record agent-text/assistant mention observed but NOT a promotion signal. */
   recordRawMention(text: string): void {
@@ -128,7 +132,6 @@ export class UsageLedger {
    * appear in every session and must not accumulate into candidates.
    */
   rawKeys(): string[] {
-    const { isSystemInjected } = require('./injection-filter');
     const out: string[] = [];
     for (const [key, entry] of this.entries) {
       if (isSystemInjected(entry.firstSeenText) || isSystemInjected(key)) continue;
@@ -144,12 +147,14 @@ export class UsageLedger {
   promotionCandidates(): PromotionCandidate[] {
     const candidates: PromotionCandidate[] = [];
     for (const [key, entry] of this.entries) {
+      if(isSystemInjected(entry.firstSeenText)||isSystemInjected(key))continue;
       if (
         (entry.counts.userRepeats >= PROMOTION_THRESHOLD ||
           entry.counts.agentRediscoveries >= PROMOTION_THRESHOLD) &&
         promotableKey(key)
       ) {
-        candidates.push({ key, counts: { ...entry.counts }, firstSeenText: entry.firstSeenText });
+        candidates.push({ key, counts: { ...entry.counts }, firstSeenText: entry.firstSeenText,
+          ...(entry.sourceKeys?{sourceKeys:[...entry.sourceKeys]}:{}) });
       }
     }
     return candidates;

@@ -29,6 +29,7 @@ interface LedgerState {
   sessions: Record<string, Record<string, string[]>>;
   /** project -> key -> true once promoted (never re-queue) */
   promoted: Record<string, Record<string, boolean>>;
+  sources?: Record<string, Record<string, Record<string,string[]>>>;
 }
 
 const CROSS_SESSION_THRESHOLD = 2;
@@ -36,7 +37,7 @@ const CROSS_SESSION_THRESHOLD = 2;
 export class CrossSessionLedger {
   private state: LedgerState;
 
-  constructor(private readonly statePath: string) {
+  constructor(private readonly statePath: string, private readonly options: {persist?:boolean} = {}) {
     this.state = this.load();
   }
 
@@ -51,6 +52,7 @@ export class CrossSessionLedger {
   }
 
   private persist(): void {
+    if(this.options.persist===false)return;
     mkdirSync(dirname(this.statePath), { recursive: true });
     writeFileSync(this.statePath, JSON.stringify(this.state, null, 2) + '\n');
   }
@@ -61,14 +63,27 @@ export class CrossSessionLedger {
   }
 
   /** Record that key appeared in sessionFile within project. Idempotent per session. */
-  observe(project: string, key: string, sessionFile: string): void {
+  observe(project: string, key: string, sessionFile: string, sourceKeys: string[] = []): void {
     const p = this.proj(project);
     const byKey = this.state.sessions[p] ?? (this.state.sessions[p] = {});
     const list = byKey[key] ?? (byKey[key] = []);
+    let changed=false;
     if (!list.includes(sessionFile)) {
       list.push(sessionFile);
-      this.persist();
+      changed=true;
     }
+    if(sourceKeys.length){
+      this.state.sources??={};const projectSources=this.state.sources[p]??(this.state.sources[p]={});
+      const observations=projectSources[key]??(projectSources[key]={});
+      const originals=observations[sessionFile]??(observations[sessionFile]=[]);
+      for(const original of sourceKeys)if(!originals.includes(original)){originals.push(original);changed=true;}
+    }
+    if(changed)this.persist();
+  }
+
+  sourcesFor(project:string,key:string): {sessionFile:string;sourceKeys:string[]}[] {
+    const p=this.proj(project);
+    return (this.state.sessions[p]?.[key]??[]).map(sessionFile=>({sessionFile,sourceKeys:[...(this.state.sources?.[p]?.[key]?.[sessionFile]??[])]}));
   }
 
   /** Distinct-session count for a key in a project (provenance for the reviewer). */

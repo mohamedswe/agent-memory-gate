@@ -5,6 +5,7 @@ import { parseRollout, feedLedger } from '../src/rollout-reader';
 import { UsageLedger } from '../src/usage-ledger';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { projectCommandContext } from '../src/project-command-context';
 
 const sessionsRoot = resolve(process.argv[2]);
 const outPath = process.argv[3];
@@ -28,7 +29,7 @@ let total = 0;
 
 for (const path of files) {
   const rollout = parseRollout(readFileSync(path, 'utf-8'));
-  const ledger = new UsageLedger();
+  const ledger = new UsageLedger(projectCommandContext(rollout.meta.cwd??''));
   feedLedger(ledger, rollout);
   for (const c of ledger.promotionCandidates()) {
     total++;
@@ -37,6 +38,7 @@ for (const path of files) {
       projectDir: rollout.meta.cwd,
       key: c.key,
       counts: c.counts,
+      ...(c.sourceKeys?{sourceKeys:c.sourceKeys}:{}),
     }));
   }
 }

@@ -1,5 +1,5 @@
 /**
- * eval-collect.ts — archive rollouts for a memory A/B eval run.
+ * eval-collect.ts â€” archive rollouts for a memory A/B eval run.
  *
  * Finds Codex rollout JSONLs whose session cwd matches a given eval workspace
  * directory (baseline/ or memory/ under the run dir), copies each raw JSONL
@@ -18,6 +18,7 @@ import { readdirSync, statSync, copyFileSync, writeFileSync, mkdirSync, existsSy
 import { createHash } from 'node:crypto';
 import { join, basename, resolve } from 'node:path';
 import { homedir } from 'node:os';
+import { parseEvalMetrics, type EvalMetrics } from '../src/eval-metrics';
 
 const runDir = resolve(process.argv[2] ?? '');
 if (!runDir || !existsSync(runDir)) {
@@ -32,7 +33,7 @@ const sessionsRoot = join(homedir(), '.codex', 'sessions');
 interface RolloutInfo {
   path: string; cwd: string; startTime: string; mtimeMs: number;
   inputTokens: number; cachedTokens: number; outputTokens: number;
-  reasoningTokens: number; toolCalls: number; eventCount: number; hasCumulative?: boolean;
+  reasoningTokens: number; toolCalls: number; eventCount: number; metrics?: EvalMetrics;
 }
 interface JsonLine { type?: string; timestamp?: string; payload?: Record<string, unknown>; }
 
@@ -62,27 +63,16 @@ function scanRollouts(): RolloutInfo[] {
             const pl = d.payload ?? {};
             if (d.type === 'session_meta' && typeof pl.cwd === 'string') info.cwd = pl.cwd;
             if (d.timestamp && !info.startTime) info.startTime = d.timestamp;
-            // token_count events carry the cumulative session usage under info.total_token_usage;
-            // token_usage_record payloads carry per-turn usage. Prefer cumulative when seen.
-            const cum = ((pl.info as Record<string, unknown> | undefined)?.total_token_usage ?? pl.total_token_usage) as Record<string, number> | undefined;
-            const perTurn = pl.usage as Record<string, number> | undefined;
-            const pick = (v: Record<string, number> | undefined): boolean => !!v && typeof v.input_tokens === 'number';
-            if (pick(cum)) {
-              info.inputTokens = Math.max(info.inputTokens, cum!.input_tokens);
-              info.cachedTokens = Math.max(info.cachedTokens, cum!.cached_input_tokens ?? 0);
-              info.outputTokens = Math.max(info.outputTokens, cum!.output_tokens ?? 0);
-              info.reasoningTokens = Math.max(info.reasoningTokens, cum!.reasoning_output_tokens ?? 0);
-              info.hasCumulative = true;
-            } else if (pick(perTurn) && !info.hasCumulative) {
-              info.inputTokens = Math.max(info.inputTokens, perTurn!.input_tokens);
-              info.cachedTokens = Math.max(info.cachedTokens, perTurn!.cached_input_tokens ?? 0);
-              info.outputTokens = Math.max(info.outputTokens, perTurn!.output_tokens ?? 0);
-              info.reasoningTokens = Math.max(info.reasoningTokens, perTurn!.reasoning_output_tokens ?? 0);
-            }
             if (d.type === 'response_item' && (pl.type === 'function_call' || pl.type === 'custom_tool_call')) info.toolCalls++;
           }
+          info.metrics = parseEvalMetrics(text);
+          info.inputTokens = info.metrics.usage?.input ?? 0;
+          info.cachedTokens = info.metrics.usage?.cached ?? 0;
+          info.outputTokens = info.metrics.usage?.output ?? 0;
+          info.reasoningTokens = info.metrics.usage?.reasoning ?? 0;
+          info.toolCalls = info.metrics.toolCalls;
           if (info.cwd) found.push(info);
-        } catch { /* unreadable rollout — skip */ }
+        } catch { /* unreadable rollout â€” skip */ }
       }
     }
   };
@@ -149,9 +139,10 @@ for (const cond of conds) {
     sessionsArr.push({
       file: dest, original_path: m.path, started: m.startTime, mtime: new Date(m.mtimeMs).toISOString(),
       sha256: sha256(dest),
-      input_tokens: m.inputTokens, cached_input_tokens: m.cachedTokens,
-      uncached_input_tokens: m.inputTokens - m.cachedTokens,
-      output_tokens: m.outputTokens, reasoning_tokens: m.reasoningTokens,
+      accounting: m.metrics?.accounting, accounting_issues: m.metrics?.issues,
+      input_tokens: m.metrics?.usage?.input ?? null, cached_input_tokens: m.metrics?.usage?.cached ?? null,
+      uncached_input_tokens: m.metrics?.usage?.uncached ?? null,
+      output_tokens: m.metrics?.usage?.output ?? null, reasoning_tokens: m.metrics?.usage?.reasoning ?? null,
       tool_calls: m.toolCalls, jsonl_lines: m.eventCount,
     });
   }

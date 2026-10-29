@@ -1,0 +1,148 @@
+{
+  "version": 5,
+  "amendedAt": "2026-10-27T15:33:05.961Z",
+  "amendment": "Capture-fix follow-up authorized by user. Frozen tasks/source unchanged; fixed action capture, reviewed-memory manipulation check, isolated Git roots, and balanced within-task condition positions apply to all fresh comparison runs. Historical Run 09 is preserved.",
+  "sourceCommit": "09a1ef67fb8911ec37fb63e1799ecce39aed6428",
+  "sourceHash": "f7f558089bc248c2db745d1851dc728d1da547f69eef39c833bb1235bf7d56ea",
+  "taskSpecHash": "d094773975054f50eff860ed46af6f491e4cee9a4659ae6a0329cd02d13c9dcd",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "temperature": "CLI default, not configurable in this trial",
+  "codexVersion": "codex-cli 0.164.0-alpha.11.1",
+  "billing": "chatgpt-plan",
+  "actualCostUsd": null,
+  "seed": "369316e7-af2d-4aec-b954-da6c9c1227f6",
+  "schedule": [
+    {
+      "task": "neutral-recovery",
+      "condition": "memory",
+      "key": "518042820241a387b90fc87e2f4784bc5c298497981c891aa246589685b4a3ba"
+    },
+    {
+      "task": "neutral-recovery",
+      "condition": "baseline",
+      "key": "64d730c9e0cdea804b4f15203792592d220e03b560d5e28518058ea546e99bb9"
+    },
+    {
+      "task": "neutral-recovery",
+      "condition": "note",
+      "key": "e4a0b14c65b9775e43545a4e530026678b84162e4cc746774fddc361ce1ff9fc"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "baseline",
+      "key": "c77ec20970920093d8f2fcbc9f0bbf7f7d5f4658ba691f4cfd4b6e0f08188a63"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "note",
+      "key": "f16ed4dad70651e4686b8ca01ab0bbb7e9624e983296fda3492eb61817661c9c"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "memory",
+      "key": "0ce0b0d30f5af30ff3feebc85462abe523e690aafd07e06f22af2edd8b0ba7a2"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "note",
+      "key": "18c44822fa0936feb9ba73050bd6d8d8b80d46fb09f43a1161b593e98d31c9e0"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "memory",
+      "key": "ff750e0e99a3b76425a0e5b69785eb19832125fae1480a72827a0ea5d46441b5"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "baseline",
+      "key": "8bbdf5c326f3e4531c4dd98ff67ce08ee1abe7cb07e57a13d658a673198095f3"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "strict-verdict-set",
+      "prompt": "Fix satisfaction classification accepting verdicts for turn indices that were not requested. It must accept exactly one verdict for each supplied turn and reject additional, missing, duplicate, fractional, or invalid-state verdicts. Keep valid output ordered by the supplied turns and preserve budget accounting. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "2d22338586434c6c46d2d00c85b70fee71ab0194f893a457f9cc0ed754731317"
+    },
+    {
+      "id": "neutral-recovery",
+      "prompt": "Fix satisfaction transition tracking when neutral messages occur between displeasure and explicit satisfaction. A displeased -> neutral -> pleased sequence must close the original failure as one recovery, from the first displeased turn to the pleased turn; it must not also create a milestone or unresolved failure for that run. Preserve ordinary milestones, regressions, terminal unresolved failures, and separate later displeased runs. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "346d1a06420736d9a052bcbfc400969c8413b050207074230f7ac5f665bd8a52"
+    },
+    {
+      "id": "idless-rollout",
+      "prompt": "Fix rollout parsing when response_item payloads omit id. Distinct messages without IDs must be retained rather than collapsing under an empty-string ID. Tool calls and outputs without IDs should use call_id for deduplication, with distinct identities for a call and its output. Preserve deduplication of explicit item IDs and tolerance of partial trailing JSON. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "d2acc02e24c06b4e1752dd5fd1e565f207a571ba4b09ab3ef960baeacefcb23d"
+    }
+  ],
+  "orderDesign": "Task order and base condition order randomized; rotated within task blocks so each condition is first, second and third once.",
+  "trainingReplay": {
+    "root": ".eval-local/value-codex-v3",
+    "manifestHash": "2e8d41b30d3d1bf970c47b58ef0c17bff7a7554335d6358e24c9bcf48fd56b4e",
+    "inputs": [
+      {
+        "session": "warmup-0",
+        "rolloutHash": "6357894c64af7d52789f1ffb06ce78af2c3e9af07c4cae729e0d2b7ef1cd0b19",
+        "eventsHash": "9aa4b86baf99ad98f150715ec79ecd7073301fe0c404526f3b961d476de95a7e",
+        "resultHash": "7f40b95ea28d926421c66cf008e9a194f4abf3c0ec46edfc5152780dbe6554d7"
+      },
+      {
+        "session": "warmup-1",
+        "rolloutHash": "c6e6780710dc1234c35fdffd7258edaa5dab5b82c067bff4dc0cc9da1b497c8b",
+        "eventsHash": "13b3289171b4358254b0f3a63f9f936d68ffca026221b849b94c739aa347aa8a",
+        "resultHash": "7bfa4733dc8d755927bf02c6a3a17ac22eb3b84a4dbf597716ac6c90b0cda063"
+      }
+    ]
+  },
+  "trainingCostAccounting": "Reused onboarding usage counts in full formation cost; only review calls are new formation usage. Both are reported separately.",
+  "expectedMemoryProcedure": "bun scripts/test.ts",
+  "isolatedGitRoots": true,
+  "harnessHashes": {
+    "src/codex-trial.ts": "1f6a6e1100e2b7ff5b35ac49e77f8f0a0e6be7325d6f7696da3ea13497ff26c8",
+    "scripts/codex-value-trial.ts": "6aec3bc325b98aae6aef7fd97483c9a41aec8fe555102920a286d6c08e9dbaf9",
+    "src/value-trial.ts": "99d8350555498b6a132daad35756dfd8129be9ada4d83e15fd5eac1c56402a43",
+    "src/reviewer-client.ts": "dd67cf4dec7dae1efafcc984faddd00aebf97b338c8362ef0b66a8e3457c7963",
+    "src/eval-metrics.ts": "8bb0fbc9d49aa22a76d76fd0ba3562d904c25dca482375cc2aa39bd1b65b980e",
+    "experiments/value-v1-tasks.ts": "d094773975054f50eff860ed46af6f491e4cee9a4659ae6a0329cd02d13c9dcd",
+    "src/trial-schedule.ts": "5406a489ef7f5b392e406aa5fe2ba18028cd2787b7c73ee9d7c3ce170dd0f441",
+    "src/trial-workspace.ts": "9eec8b378627ae99ca40ca394924603fc5a2f8897461133cc39c7e98f9c87f6c",
+    "src/usage-ledger.ts": "78282503c32617fbe770fb0719106ce56de7424a1529e3aa3b178f14d3aee0e9",
+    "src/command-identity.ts": "46fadcac8a40f271afcd8b95460421f7225ca6228af96a60afd678d486d1534e",
+    "src/cross-session-ledger.ts": "4939f701e09b7f723a3a8cabd907fe56c48fd3717d42430b1293111112d911a0",
+    "src/redaction-gate.ts": "fdfe53203eaea8b4469adfdc237e7b640ae52f0e93da25b7edb530b1ff106991",
+    "src/rollout-reader.ts": "453667d9b1491958b8e81c11d5e113ff2837c2614dcf2e718f86df86842fe3a3",
+    "src/project-command-context.ts": "bc579b83f9b2390bb6698db7bcca9dbaf4a59097233a9b4638f4cd489825841d",
+    "src/candidate-writer.ts": "8e0f5df9481a6d8af762da0afb5ab26449f87c5a0b4fe0626e7bfd0aedc77f7f",
+    "src/records.ts": "52bff4c531e111a3676fc035685a2cdc92b6432b9bbeecb2dc58abf5c5854b5e",
+    "src/project-registry.ts": "fe8aa9dff3914cc4d945a76db73d8217cb4b2116eefb81e22e11b62df2017b20"
+  },
+  "noteHash": "71f9361b1c807e336bbe3209b071cec020a2fa90ee7ee76cfa2807b8545ccf38",
+  "primaryEndpoint": "Uncached input plus output tokens per provisionally accepted patch, including failed attempts and automatic-memory formation; not a dollar-cost estimate.",
+  "secondaryEndpoints": [
+    "Acceptance fraction",
+    "Total input/output tokens",
+    "Tool calls",
+    "Elapsed agent time"
+  ],
+  "practicalThreshold": "At least 15% fewer primary tokens than baseline, with no observed acceptance loss; small sample remains exploratory.",
+  "limits": {
+    "measuredRuns": 9,
+    "warmups": 2,
+    "maxMemoryReviews": 12,
+    "maxTotalSessions": 24,
+    "maxObservedTokens": 2000000,
+    "maxSessionMs": 300000
+  },
+  "memoryScope": "Repetition lane only. Each onboarding session has one task instruction and no human satisfaction feedback; satisfaction-triggered learning is not evaluated.",
+  "onboardingPermissions": "workspace-write permits temporary test fixtures; prompt prohibits source modifications and a post-run fingerprint enforces this.",
+  "noteProvenance": "AI-assisted operator-style note from existing repo docs; not a human-maintenance study",
+  "limitations": [
+    "Three selected defects, one repository, one attempt per condition; not representative or powered.",
+    "Plan usage has no per-session dollar cost; token metrics are proxies, not billed credits.",
+    "No real human effort or maintenance measurement; automated acceptance remains provisional.",
+    "Native command read boundaries are instructions plus sandbox; isolated Git roots prevent parent discovery, and traces still require review.",
+    "Reusing prior onboarding isolates capture changes; this is not a test of how often natural new sessions produce useful memories.",
+    "Compared with Run 09, isolation and condition ordering also improved; before/after differences are not attributable to the capture fix alone."
+  ]
+}

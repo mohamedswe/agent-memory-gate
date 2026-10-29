@@ -62,6 +62,8 @@ interface QueueLine {
   queuedAt: string; sessionFile: string; projectDir: string;
   key?: string;
   counts?: { userRepeats: number; agentRediscoveries: number; rawMentions: number };
+  sourceKeys?: string[];
+  sourceSessions?: string[];
   turns?: UserTurn[];
   job?: 'satisfaction-trajectory';
   excluded?: string;
@@ -191,7 +193,7 @@ try {
       }
     } else {
       // --- lane 1: repetition candidate review ---
-      const candidate: Candidate = { sessionFile: line.sessionFile, projectDir: line.projectDir, key: line.key ?? '', counts: line.counts ?? { userRepeats: 0, agentRediscoveries: 0, rawMentions: 0 } };
+      const candidate: Candidate = { sessionFile: line.sessionFile, projectDir: line.projectDir, key: line.key ?? '', counts: line.counts ?? { userRepeats: 0, agentRediscoveries: 0, rawMentions: 0 }, sourceKeys:line.sourceKeys, sourceSessions:line.sourceSessions };
       try {
         const output = await callReviewer(runKey, candidate, {
           httpPost,

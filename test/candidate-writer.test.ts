@@ -78,3 +78,14 @@ test('writer rejects malformed reviewer output before touching the brain', async
   const after = await engine.executeRaw('SELECT count(*)::int AS n FROM pages');
   expect((after.rows?.[0] as { n: number })?.n).toBe((before.rows?.[0] as { n: number })?.n);
 });
+
+test('normalized candidates retain original source calls and distinct sessions in durable provenance', async () => {
+  const service=new RecordService('codex',engine);
+  const c={...candidate(),sourceKeys:['tool:exec_command:cmd=bun scripts/test.ts','tool:exec_command:cmd=bun run test'],sourceSessions:['first.jsonl','second.jsonl']};
+  const record=await writeCandidateRecord(service,'codex',c,reviewerOutput());
+  expect(record.evidencePointers).toContain('source-session:first.jsonl');
+  expect(record.evidencePointers).toContain('source-session:second.jsonl');
+  expect(record.evidencePointers).toContain('source-call:tool:exec_command:cmd=bun run test');
+  const saved=await service.read('codex',record.id);
+  expect((saved as typeof record)?.evidencePointers).toEqual(record.evidencePointers);
+});

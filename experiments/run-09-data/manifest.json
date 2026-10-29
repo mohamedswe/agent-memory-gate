@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "createdAt": "2026-10-27T09:10:38.462Z",
+  "sourceCommit": "09a1ef67fb8911ec37fb63e1799ecce39aed6428",
+  "sourceHash": "f7f558089bc248c2db745d1851dc728d1da547f69eef39c833bb1235bf7d56ea",
+  "taskSpecHash": "d094773975054f50eff860ed46af6f491e4cee9a4659ae6a0329cd02d13c9dcd",
+  "harnessHash": "99d8350555498b6a132daad35756dfd8129be9ada4d83e15fd5eac1c56402a43",
+  "providerHash": "6f4a99906fc3eb4dbccea30da42a83908cd24f5953ccf69720a4fd5d09cd9954",
+  "runnerHash": "428cfa26c141c4abbcb907d2d855b6af8913a13ff2319401d66f48c91ddf50ee",
+  "model": "z-ai/glm-5.3",
+  "temperature": 0,
+  "maxOutputTokens": 4096,
+  "maxTurns": 14,
+  "capUsd": 5,
+  "primaryEndpoint": "total inference dollars per provisionally accepted patch, including failed runs and memory formation",
+  "practicalThreshold": "15% lower cost versus baseline; no observed acceptance loss; note comparison reported separately",
+  "seed": "104f3bde-0b86-4cd8-a3a0-8c253a190b1b",
+  "schedule": [
+    {
+      "task": "neutral-recovery",
+      "condition": "memory",
+      "key": "31d2bb025bc1d424d339865989e28f18798e445683f8062d7d3459fbe92677f1"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "note",
+      "key": "461ad472926c7e792d76cd2ae6f852f366e9214497c89f363056c7c01254d09c"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "memory",
+      "key": "5b000b36508dd2a680c4d40188d1091fd916739da500740d48d992b3506ba304"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "memory",
+      "key": "6d9fce10dc1079932125f7b5d8f21c3fa8c4627aff04772ab0b18ac3a84525d4"
+    },
+    {
+      "task": "idless-rollout",
+      "condition": "baseline",
+      "key": "7b008b5e274f5a8417fd87de214d76d701d97ee4d5c85ddfd45fe823b9882045"
+    },
+    {
+      "task": "neutral-recovery",
+      "condition": "baseline",
+      "key": "b461c8226a2ceb1cb1f64e7b41588e73351b51996c0dbab37967a3d1a595681e"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "baseline",
+      "key": "c564ae8519c50f207a6670eec5462ce4b42141690c04c8bfb89f215f6dd66cd9"
+    },
+    {
+      "task": "strict-verdict-set",
+      "condition": "note",
+      "key": "c7ac679ff465db95f09835069ec32e9086a7b962cfdc6308e157e57b8e9587d0"
+    },
+    {
+      "task": "neutral-recovery",
+      "condition": "note",
+      "key": "d6868b8f07e65878d59d13585d87c15a1220ce977a61c026ec69f4bd716baea5"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "strict-verdict-set",
+      "prompt": "Fix satisfaction classification accepting verdicts for turn indices that were not requested. It must accept exactly one verdict for each supplied turn and reject additional, missing, duplicate, fractional, or invalid-state verdicts. Keep valid output ordered by the supplied turns and preserve budget accounting. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "2d22338586434c6c46d2d00c85b70fee71ab0194f893a457f9cc0ed754731317"
+    },
+    {
+      "id": "neutral-recovery",
+      "prompt": "Fix satisfaction transition tracking when neutral messages occur between displeasure and explicit satisfaction. A displeased -> neutral -> pleased sequence must close the original failure as one recovery, from the first displeased turn to the pleased turn; it must not also create a milestone or unresolved failure for that run. Preserve ordinary milestones, regressions, terminal unresolved failures, and separate later displeased runs. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "346d1a06420736d9a052bcbfc400969c8413b050207074230f7ac5f665bd8a52"
+    },
+    {
+      "id": "idless-rollout",
+      "prompt": "Fix rollout parsing when response_item payloads omit id. Distinct messages without IDs must be retained rather than collapsing under an empty-string ID. Tool calls and outputs without IDs should use call_id for deduplication, with distinct identities for a call and its output. Preserve deduplication of explicit item IDs and tolerance of partial trailing JSON. Add regression tests and run appropriate existing tests. Do not modify existing tests or the canonical launcher.",
+      "acceptanceHash": "d2acc02e24c06b4e1752dd5fd1e565f207a571ba4b09ab3ef960baeacefcb23d"
+    }
+  ],
+  "noteHash": "71f9361b1c807e336bbe3209b071cec020a2fa90ee7ee76cfa2807b8545ccf38",
+  "noteProvenance": "AI-assisted operator-style note from existing repo docs; not a human-maintenance study",
+  "limitations": [
+    "Three selected defects in one repo, one attempt per condition, not representative or powered.",
+    "Custom limited-tool agent, not Codex CLI; Codex CLI is not logged in.",
+    "Human effort and longitudinal maintenance are not measured.",
+    "Automated acceptance is provisional pending review."
+  ],
+  "preflightAmendments": [
+    {
+      "at": "2026-10-27T09:18:42.809Z",
+      "reason": "Offline integration and fail-closed accounting checks before any training or comparative runs",
+      "previous": {
+        "harnessHash": "8093612d505ce566a4b6f43bc9b72c193bd0bc7903bf2ff39bc879cd08c23fce",
+        "providerHash": "48c48defe0d42db29bb43c40ad00777131172a16a42e891b5533f10bd7721cd9",
+        "runnerHash": "a07dfc8effeea86529dfb089cfc9fa4357765b8368a40541d85b595997aed72e"
+      }
+    }
+  ]
+}

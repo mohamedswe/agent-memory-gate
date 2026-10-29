@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-10-27T09:19:19.640Z",
+  "sourceRegressions": {
+    "exitCode": 0,
+    "pass": 123,
+    "fail": 0,
+    "elapsedMs": 16719
+  },
+  "controls": [
+    {
+      "task": "strict-verdict-set",
+      "before": {
+        "exitCode": 1,
+        "pass": 2,
+        "fail": 2,
+        "elapsedMs": 99
+      },
+      "afterReferenceFix": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0,
+        "elapsedMs": 45
+      },
+      "referenceRegressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0,
+        "elapsedMs": 14215
+      }
+    },
+    {
+      "task": "neutral-recovery",
+      "before": {
+        "exitCode": 1,
+        "pass": 3,
+        "fail": 3,
+        "elapsedMs": 52
+      },
+      "afterReferenceFix": {
+        "exitCode": 0,
+        "pass": 6,
+        "fail": 0,
+        "elapsedMs": 93
+      },
+      "referenceRegressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0,
+        "elapsedMs": 12810
+      }
+    },
+    {
+      "task": "idless-rollout",
+      "before": {
+        "exitCode": 1,
+        "pass": 1,
+        "fail": 3,
+        "elapsedMs": 48
+      },
+      "afterReferenceFix": {
+        "exitCode": 0,
+        "pass": 4,
+        "fail": 0,
+        "elapsedMs": 47
+      },
+      "referenceRegressions": {
+        "exitCode": 0,
+        "pass": 123,
+        "fail": 0,
+        "elapsedMs": 12121
+      }
+    }
+  ],
+  "comparativeRunsExecuted": 0,
+  "comparisonStatus": "not_started",
+  "connectivityProbe": {
+    "model": "z-ai/glm-5.3",
+    "actualCostUsd": 0.00002951,
+    "repositoryContentSent": false
+  },
+  "outstandingNetworkReservationUsd": 0.25
+}

@@ -1,0 +1,101 @@
+{
+  "generatedAt": "2026-10-27T16:02:58.539Z",
+  "sourceCommit": "09a1ef67fb8911ec37fb63e1799ecce39aed6428",
+  "offline": true,
+  "inferenceCalls": 0,
+  "reapplied": 9,
+  "allAcceptanceChecksPassed": true,
+  "checks": [
+    {
+      "id": "518042820241",
+      "task": "neutral-recovery",
+      "condition": "memory",
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "90be8e91b7b0f8a290d9a7ad23048f11e177b4d2833c37c8898fe4354089ad66"
+    },
+    {
+      "id": "64d730c9e0cd",
+      "task": "neutral-recovery",
+      "condition": "baseline",
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "befbd62463345215c9b928ee0a7a9754337c94041431ce73f85b44c8ee5dd085"
+    },
+    {
+      "id": "e4a0b14c65b9",
+      "task": "neutral-recovery",
+      "condition": "note",
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "1ca879c26d834b18848f7dfa36b3b8ae65347e07c588ba424379d944f31ee506"
+    },
+    {
+      "id": "c77ec2097092",
+      "task": "idless-rollout",
+      "condition": "baseline",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "62730a431b7c7626dfe0deb931211cac83344d7e9006a2dade86bbf286b90f96"
+    },
+    {
+      "id": "f16ed4dad706",
+      "task": "idless-rollout",
+      "condition": "note",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "aebe7edc3552bbeac8840a5f534d260eec204b967c395c9f4c59ccf8513b14b7"
+    },
+    {
+      "id": "0ce0b0d30f5a",
+      "task": "idless-rollout",
+      "condition": "memory",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "12d8bff757a7cb5b7281176e52e5b37ec4d67aeac8ea6e150f9ab564b30f7263"
+    },
+    {
+      "id": "18c44822fa09",
+      "task": "strict-verdict-set",
+      "condition": "note",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "b1e317c16429af4a98f9264d1029ec5fd016a90b52687cee6fbe4314e7c7e15b"
+    },
+    {
+      "id": "ff750e0e99a3",
+      "task": "strict-verdict-set",
+      "condition": "memory",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "393680f5a734345d07aef873ce5221dedc1e5a63a5ef398c8fc8ba75b93e7cda"
+    },
+    {
+      "id": "8bbdf5c326f3",
+      "task": "strict-verdict-set",
+      "condition": "baseline",
+      "exitCode": 0,
+      "pass": 4,
+      "fail": 0,
+      "passed": true,
+      "patchHash": "a1a7a780da2cfc287b7bd07b9e4975939669687dd0a643ff35d4ec30fecc5bb1"
+    }
+  ],
+  "scope": "Fresh patch reapplication and hidden functional acceptance. Full original-suite results remain in the experiment validation logs; not rerun here."
+}
