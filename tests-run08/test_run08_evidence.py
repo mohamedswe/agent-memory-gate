@@ -1,6 +1,11 @@
-"""Verification suite for run-08 evidence: every figure quoted in
-dual-brain-memory/experiments/run-08-a-mem-baseline.md is checked
-against the raw result JSONs. Figures are never hand-trusted.
+"""Consistency checks for run-08: figures quoted in
+experiments/run-08-a-mem-baseline.md and README.md must match the raw
+result JSONs, and the JSON totals must be internally consistent.
+
+These checks catch transcription errors between the data and the write-up.
+They do not independently verify the experiment: the JSONs were produced
+by the author's own scripts from private session logs that are not
+published.
 
 Run: PYTHONPATH= VIRTUAL_ENV= .venv/Scripts/python.exe -m pytest tests/ -q
 """

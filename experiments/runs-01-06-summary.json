@@ -1,0 +1,42 @@
+{
+  "description": "Per-session figures for runs 01-06, extracted on 2026-10-18 from the author's private Codex rollouts (~/.codex/sessions/2026/10/11/) and .eval-local/*/index.json written by scripts/eval-collect.ts. Rollouts themselves are not published. uncached_input = input_tokens - cached_input_tokens.",
+  "gbrain": { "version": "0.48.5.0", "commit": "43597b1", "installed": "2026-09-09" },
+  "notes": [
+    "Run 03 (.eval-local/run-03-rep1..3) was prepared but never executed: index.json sessions == [] and no rollout has those workspaces as cwd.",
+    "Run 02 was executed three times in .eval-local/run-02/; these are the three run-02 pairs below.",
+    "first-run (.eval-local/first-run) has no sessions; run01 below is first-valid."
+  ],
+  "pairs": [
+    {"id": "run01",    "task": "find and run focused test", "order": "baseline first",
+     "baseline": {"input": 79793,  "uncached_input": 13617, "output": 466,  "tool_calls": 3,  "wall_s": 26,  "rollout": "rollout-2026-10-11T18-26-09-01a12d12-cda6-7cd1-886e-65f3f790aadc.jsonl"},
+     "memory":   {"input": 83243,  "uncached_input": 13867, "output": 449,  "tool_calls": 3,  "wall_s": 20,  "rollout": "rollout-2026-10-11T18-26-23-01a12d13-0241-7110-9818-555e405c4696.jsonl"}},
+    {"id": "run02-p1", "task": "graph determinism", "order": "memory first",
+     "baseline": {"input": 368766, "uncached_input": 35582, "output": 3677, "tool_calls": 9,  "wall_s": 121, "offline_ignore_scripts": false, "left_workspace": true,  "rollout": "rollout-2026-10-11T19-10-37-01a12d3b-83b8-78e2-a47e-4dc271552f1d.jsonl"},
+     "memory":   {"input": 349829, "uncached_input": 32901, "output": 4673, "tool_calls": 10, "wall_s": 146, "offline_ignore_scripts": true,  "left_workspace": false, "rollout": "rollout-2026-10-11T19-10-41-01a12d3b-90c5-7622-8d9f-457701df2ae7.jsonl"}},
+    {"id": "run02-p2", "task": "graph determinism", "order": "memory first",
+     "baseline": {"input": 390347, "uncached_input": 37707, "output": 3951, "tool_calls": 10, "wall_s": 137, "offline_ignore_scripts": false, "left_workspace": false, "rollout": "rollout-2026-10-11T19-28-23-01a12d4b-c7b3-7180-b394-493ff6612387.jsonl"},
+     "memory":   {"input": 305316, "uncached_input": 27044, "output": 3573, "tool_calls": 9,  "wall_s": 121, "offline_ignore_scripts": true,  "left_workspace": false, "rollout": "rollout-2026-10-11T19-27-35-01a12d4b-0bf6-7ba1-b306-ff60665d1ac1.jsonl"}},
+    {"id": "run02-p3", "task": "graph determinism", "order": "baseline first",
+     "baseline": {"input": 463518, "uncached_input": 35102, "output": 4176, "tool_calls": 12, "wall_s": 164, "offline_ignore_scripts": false, "left_workspace": false, "rollout": "rollout-2026-10-11T19-32-46-01a12d4f-c951-7890-bb82-53d69c6f0ee5.jsonl"},
+     "memory":   {"input": 402355, "uncached_input": 28083, "output": 3790, "tool_calls": 12, "wall_s": 163, "offline_ignore_scripts": false, "left_workspace": false, "rollout": "rollout-2026-10-11T19-32-47-01a12d4f-cfba-74a0-8ce5-35b942df0aad.jsonl"}},
+    {"id": "run04-r1", "task": "stale-advice trap", "order": "memory first",
+     "baseline": {"input": 168541, "uncached_input": 40029, "output": 1311, "tool_calls": 5, "wall_s": 43, "rollout": "rollout-2026-10-11T19-46-30-01a12d5c-5b07-7040-8e99-71265d2e7a63.jsonl"},
+     "memory":   {"input": 112509, "uncached_input": 28285, "output": 921,  "tool_calls": 3, "wall_s": 31, "stale_commands_executed": 0, "rollout": "rollout-2026-10-11T19-46-32-01a12d5c-63b9-7060-b27e-88f1a5daabd0.jsonl"}},
+    {"id": "run04-r2", "task": "stale-advice trap", "order": "baseline first",
+     "baseline": {"input": 158046, "uncached_input": 34910, "output": 1406, "tool_calls": 4, "wall_s": 51, "rollout": "rollout-2026-10-11T19-48-37-01a12d5e-4b9e-7e71-92e7-1467e4a123fd.jsonl"},
+     "memory":   {"input": 110961, "uncached_input": 27505, "output": 947,  "tool_calls": 3, "wall_s": 34, "stale_commands_executed": 0, "rollout": "rollout-2026-10-11T19-48-47-01a12d5e-7338-7262-bd09-e24436eb795f.jsonl"}},
+    {"id": "run04-r3", "task": "stale-advice trap", "order": "baseline first",
+     "baseline": {"input": 156444, "uncached_input": 35100, "output": 1430, "tool_calls": 4, "wall_s": 52, "rollout": "rollout-2026-10-11T19-50-05-01a12d5f-a646-7720-9d82-778108b5a778.jsonl"},
+     "memory":   {"input": 198190, "uncached_input": 40238, "output": 1405, "tool_calls": 5, "wall_s": 45, "stale_commands_executed": 0, "rollout": "rollout-2026-10-11T19-50-16-01a12d5f-ce5b-7bd1-b953-88c01019e21d.jsonl"}}
+  ],
+  "three_condition_runs": [
+    {"id": "run05", "task": "heredoc trap (path-check.ts)",
+     "baseline": {"input": 69405,  "uncached_input": 11805, "output": 832,  "tool_calls": 3, "wall_s": 48, "file_creation": "patch tool", "tests_first_try": true, "rollout": "rollout-2026-10-11T22-28-29-01a12df0-a8ef-7b81-a40d-a42f041fe81e.jsonl"},
+     "note":     {"input": 68884,  "uncached_input": 10388, "output": 957,  "tool_calls": 3, "wall_s": 46, "file_creation": "patch tool", "tests_first_try": true, "note_read": false, "rollout": "rollout-2026-10-11T22-28-47-01a12df0-ec57-70f2-92c4-17a997430c49.jsonl"},
+     "memory":   {"input": 106885, "uncached_input": 11909, "output": 1036, "tool_calls": 5, "wall_s": 53, "file_creation": "patch tool", "tests_first_try": true, "memory_read": true, "rollout": "rollout-2026-10-11T22-28-42-01a12df0-dc2b-75b3-8ad5-eab9412b4891.jsonl"}},
+    {"id": "run06", "task": "test-import trap (pathUtils.test.ts)",
+     "baseline": {"input": 118158, "uncached_input": 10766, "output": 1147, "tool_calls": 5, "wall_s": 58, "tests_first_try": true, "rollout": "rollout-2026-10-11T22-39-06-01a12dfa-5fcf-7800-95a9-aa9f6821a87e.jsonl"},
+     "note":     {"input": 149370, "uncached_input": 14458, "output": 1817, "tool_calls": 6, "wall_s": 77, "tests_first_try": true, "note_read": true, "rollout": "rollout-2026-10-11T22-39-35-01a12dfa-d388-74b1-83df-8f91edb64c91.jsonl"},
+     "memory":   {"input": 133137, "uncached_input": 25361, "output": 1610, "tool_calls": 5, "wall_s": 65, "tests_first_try": true, "memory_read": true, "rollout": "rollout-2026-10-11T22-39-28-01a12dfa-b918-7622-a67a-7d335f62a8d5.jsonl"}}
+  ]
+}

@@ -92,6 +92,14 @@ Workspaces: run-04-rep1 (baseline first), rep2 (memory first), rep3 (baseline fi
 
 **Uncached input:** baseline 40.0k/34.9k/40.2k vs memory 28.3k/27.5k/40.2k — memory -17% mean, 2/3 in its favor; memory-rep3 was an outlier (+1%) with elevated total input (198k). Tool calls: memory 3/3/5 vs baseline 5/4/4.
 
+> **Correction (2026-10-18), from the session records:** the paragraph below is wrong on three points. Kept as originally written for the record.
+>
+> 1. **There are 7 executed pairs, not 9.** Run 03's three reps were prepared but never run: `.eval-local/run-03-rep{1,2,3}/index.json` all have `"sessions": []` and no Codex rollout has those workspaces as its working directory. Run 02 was instead run three times in `.eval-local/run-02/` (pairs at 23:10, 23:27–23:30 and 23:32 UTC), and those were counted again as "run 03". Executed pairs: run 01 ×1, run 02 ×3, run 04 ×3.
+> 2. **Uncached-input deltas (memory vs baseline):** run 01 +1.8%; run 02 −7.5%, −28.3%, −20.0%; run 04 −29.3%, −21.2%, +14.6%. Memory was lower in 5 of 7 (median −20.0%, mean −12.8%). Run 04 rep 3 was mis-transcribed above: its baseline used 35,100 uncached tokens, not 40.2k, so memory was +14.6%, not +1%.
+> 3. **Compliance:** memory used `npm --offline --ignore-scripts` in 2 of run 02's 3 memory runs (rep 3 ran plain `npm run build:graph`), not 3/3. Baseline used it 0/3; one baseline run (rep 1) read a file outside its workspace.
+>
+> Per-session figures and rollout file names: `experiments/runs-01-06-summary.json`.
+
 **Cross-eval picture after 9 pairs (runs 01-04):** briefing consistently saves ~10-20% uncached input; improves protocol discipline (offline/ignore-scripts 3/3 vs 0/3 in run-02/03 batch); NEVER changed correctness (methods converge in every task); no measurable speed effect; and survives a baited staleness trap. Memory = efficiency + discipline, not capability.
 
 ## Run 05 prepared (2026-10-12): the LONGITUDINAL test — failure knowledge vs fresh sessions
@@ -106,6 +114,37 @@ Three conditions (fresh software-auditor exports, identical commit):
 - run-05-memory: .hermes-memory/ (BRIEFING.md + HISTORY.md) with the captured failure record
 
 Scoring: (a) file-creation method per condition (heredoc vs direct write — from tool calls, not claims), (b) whether tests pass first try, (c) recovery cost if the failure hits (steps to fix), (d) token/tool cost. Predictions: baseline hits the trap or writes it safely by luck; note avoids it (explicit, human-tuned); memory avoids it only if HISTORY.md is actually read — that is the claim under test.
+
+## Result: runs 05–06 (2026-10-11, local evening) — NULL (written up 2026-10-18 from session records)
+
+Both runs had three conditions on fresh exports of the same commit: **baseline** (nothing), **note** (hand-written `NOTE.md` at the workspace root) and **memory** (`.project-memory/BRIEFING.md` + `HISTORY.md` with a seeded failure record). One session per condition.
+
+**Run 05 — heredoc trap.** Task: create `scripts/path-check.ts` (a `toPosix` backslash normalizer using a regex with backslash escapes) plus 3 bun tests, run them and report.
+
+| condition | uncached input | total input | output | tool calls | wall | file creation | tests first try | memory/note read? |
+|---|---|---|---|---|---|---|---|---|
+| baseline | 11,805 | 69,405 | 832 | 3 | 48s | patch tool | yes (3/3) | n/a |
+| note | 10,388 | 68,884 | 957 | 3 | 46s | patch tool | yes (3/3) | **no** — `NOTE.md` present but never opened |
+| memory | 11,909 | 106,885 | 1,036 | 5 | 53s | patch tool | yes (3/3) | yes — BRIEFING + HISTORY read in call 1 |
+
+Verdict: **the trap could not fire.** Every condition created files with Codex's patch tool, never a shell heredoc, so the recorded heredoc failure was irrelevant to how this agent writes files. Memory was read and cost +0.9% uncached / +54% total input for no behavioural difference.
+
+**Run 06 — test-import trap.** Task: add `test/pathUtils.test.ts` with at least 3 tests for the export in `src/graph/persistRepositoryGraph.ts`, without modifying existing files, run it and report.
+
+| condition | uncached input | total input | output | tool calls | wall | tests first try | memory/note read? |
+|---|---|---|---|---|---|---|---|
+| baseline | 10,766 | 118,158 | 1,147 | 5 | 58s | yes (4 pass) | n/a |
+| note | 14,458 | 149,370 | 1,817 | 6 | 77s | yes (4 pass; also ran full suite, 159 pass) | **yes** — `NOTE.md` read in call 3 |
+| memory | 25,361 | 133,137 | 1,610 | 5 | 65s | yes (4 pass; also ran full suite, 159 pass) | yes — BRIEFING + HISTORY read in call 1 |
+
+Verdict: **no correctness difference, and memory cost more** (+136% uncached vs baseline; the note condition +34%). Both primed conditions chose to run the full test suite as well, which the baseline skipped.
+
+**What these runs establish:**
+- Short artificial traps do not test longitudinal memory: competent agents solve them from the repo, and a trap must match how the agent actually works (this agent never uses heredocs).
+- Reading memory has a real cost and can change behaviour in ways that cost more, not less.
+- `NOTE.md` at the workspace root was ignored in run 05 but read in run 06, so whether an unreferenced file is read is inconsistent. A hand-written-note baseline must be wired exactly like the memory files.
+
+Source rollouts are listed in `experiments/runs-01-06-summary.json`.
 
 ## Run 07 prepared (2026-10-12): the REALISTIC loop test — build work, capture, reuse
 
