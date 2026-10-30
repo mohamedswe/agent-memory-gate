@@ -349,3 +349,33 @@ test('hermesSessionTurns skips [System:] rows entirely, keeping real adjacency',
   expect(s.turns.filter(t => t.role === 'user').map(t => t.text)).toEqual(['explain the design', 'no, use the simpler version']);
   expect(detectCorrections(s)).toHaveLength(1);
 });
+
+// ------------------------------------------- harness injection (2nd real run)
+
+test('cleanUserText: Codex file-mention headers keep only the request', () => {
+  expect(cleanUserText('# Files mentioned by the user:\n\n## notes.md: C:/x/notes.md\n\n## My request for Codex:\nuse the docs')).toBe('use the docs');
+  expect(cleanUserText('# Files pasted by the user:\n## a.txt')).toBe('');
+});
+
+test('cleanUserText: Codex interrupt notice is removed, trailing user text kept', () => {
+  const notice = 'The user interrupted the previous turn on purpose. If any tools/commands were aborted, they may have partially executed. Any running unified exec processes were terminated. verify current state before retrying.';
+  expect(cleanUserText(notice)).toBe('');
+  expect(cleanUserText(notice + ' no, use docker')).toBe('no, use docker');
+});
+
+test('cleanUserText: Claude Code harness blocks are stripped wherever they appear', () => {
+  expect(cleanUserText('<task-notification><task-id>b1</task-id><note>fires each time</note></task-notification>')).toBe('');
+  expect(cleanUserText('<ide_opened_file>The user opened a.ts. This may or may not be related to the current task.</ide_opened_file> keep it brief')).toBe('keep it brief');
+  expect(cleanUserText('<pasted_content id="d1">long spec</pasted_content>')).toBe('');
+});
+
+test('cleanUserText: attachment wrappers and scripted tool prompts are not the user', () => {
+  expect(cleanUserText("The attached pasted text file(s) contain the user's request")).toBe('');
+  expect(cleanUserText("Pasted text contains the user's request")).toBe('');
+  expect(cleanUserText('Read the file. It contains graph community summaries with community IDs')).toBe('');
+});
+
+test('isEvalProject also covers the password-reset verifier trial', () => {
+  for (const p of ['author', 'b1', 'b2', 'final']) expect(isEvalProject(`projects/${p}`)).toBe(true);
+  expect(isEvalProject('projects/final-project')).toBe(false);
+});

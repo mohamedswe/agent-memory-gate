@@ -1,0 +1,198 @@
+{
+  "version": 1,
+  "note": "Themes assigned by one annotator (Claude) on 2026-10-29 from the 68 detected corrections of the census v2 run, before the memory tree existed. Items not listed are treated as one-offs. Two themes (pricing model, back-button bug) are single-session threads; misread-intent groups corrections by intent, not topic, and is expected to be hard for similarity-based grouping. Identified by session id + sha256(whitespace-collapsed text)[:16]; no message text is stored.",
+  "items": [
+    {
+      "source": "codex",
+      "sessionId": "019fa1ca-222f-7041-959d-6a059d39e72b",
+      "sha": "804e9ff4a4a4a848",
+      "theme": "run-tests-in-docker"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019fb05b-b41f-76b2-856c-b178de985de4",
+      "sha": "ce9f47082ddc2973",
+      "theme": "run-tests-in-docker"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019fb4ac-3071-7891-8515-a587f8b45622",
+      "sha": "df819d31f91499f3",
+      "theme": "run-tests-in-docker"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260930_200009_77654c",
+      "sha": "cfaa921dd02f4b48",
+      "theme": "keep-going-dont-stop"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20261007_072542_5f87b4",
+      "sha": "cfaa921dd02f4b48",
+      "theme": "keep-going-dont-stop"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019fa1ca-222f-7041-959d-6a059d39e72b",
+      "sha": "5be1b1ea98aae3ec",
+      "theme": "keep-going-dont-stop"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20261001_161421_d32d90",
+      "sha": "78457e433d5a968a",
+      "theme": "keep-going-dont-stop"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019ffc18-5bc1-7c22-8b19-102e2c83da84",
+      "sha": "5d3c84e253c903c8",
+      "theme": "do-it-yourself"
+    },
+    {
+      "source": "codex",
+      "sessionId": "01a0734b-0a49-7b80-8273-1e6b9e9465b9",
+      "sha": "3c2176da653dc4a4",
+      "theme": "do-it-yourself"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "8ed1b1a8f2207971",
+      "theme": "understand-before-changing"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20261007_072542_5f87b4",
+      "sha": "81e29bd073c79a1f",
+      "theme": "understand-before-changing"
+    },
+    {
+      "source": "codex",
+      "sessionId": "01a166f9-4b66-7870-9484-2e9115528f3b",
+      "sha": "3db1685a2b5d8343",
+      "theme": "understand-before-changing"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260930_225604_839663",
+      "sha": "cdf171c24f2a440c",
+      "theme": "safe-cleanup"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20261002_002944_155347",
+      "sha": "7f8093c5d3f22987",
+      "theme": "safe-cleanup"
+    },
+    {
+      "source": "codex",
+      "sessionId": "01a17dc7-578b-79d0-bae7-6ca5e7728e36",
+      "sha": "04b2c9883163d248",
+      "theme": "safe-cleanup"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260714_122044_a2565662",
+      "sha": "ff4c41fdb8e1092c",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260714_122044_a2565662",
+      "sha": "1d19e8a9d2f23d09",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260719_010833_d4ff66",
+      "sha": "d9c81d9b568eceb4",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260719_010833_d4ff66",
+      "sha": "b0338abd19405c93",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20260724_015328_781f1f",
+      "sha": "b003d24a2a625d4d",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "codex",
+      "sessionId": "01a0734b-0a49-7b80-8273-1e6b9e9465b9",
+      "sha": "a13f999d050329dd",
+      "theme": "misread-intent"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019fb13a-6c67-7c32-ac6b-635db244060e",
+      "sha": "3198a79720e57e10",
+      "theme": "ask-what-is-unclear"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019fb17a-024b-7023-b3d9-057922ca4bf6",
+      "sha": "3198a79720e57e10",
+      "theme": "ask-what-is-unclear"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c5020-7cef-7ed3-bd21-c7279d117678",
+      "sha": "62cc3165e50fcf5b",
+      "theme": "project-fact-pricing-model"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c5020-7cef-7ed3-bd21-c7279d117678",
+      "sha": "9a921e4f388319f1",
+      "theme": "project-fact-pricing-model"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c5020-7cef-7ed3-bd21-c7279d117678",
+      "sha": "2cc10bc5aee2ec85",
+      "theme": "project-fact-pricing-model"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "f32e79e243f72599",
+      "theme": "bug-thread-back-buttons"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "1b1ae659c6c33fb5",
+      "theme": "bug-thread-back-buttons"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "504fbd24022f1eb5",
+      "theme": "bug-thread-back-buttons"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "bcbe44bda0dd2c6e",
+      "theme": "bug-thread-back-buttons"
+    },
+    {
+      "source": "codex",
+      "sessionId": "019c4420-5d60-7ac2-a5b5-23d29ac7a904",
+      "sha": "c0025149babbdff4",
+      "theme": "bug-thread-back-buttons"
+    },
+    {
+      "source": "hermes",
+      "sessionId": "20261014_211438_dcd16e",
+      "sha": "b162f659cdb55b00",
+      "theme": "explain-results-plainly"
+    }
+  ]
+}

@@ -70,11 +70,29 @@ export function decodeEntities(text: string): string {
  * ... ## My request for Codex: <prompt>". Only the part after the marker is
  * the user's voice. A wrapper with no marker is all context: returns ''.
  */
-const IDE_CONTEXT = /^#\s*Context from my IDE setup:/i;
+const IDE_CONTEXT = /^#\s*(Context from my IDE setup|Files mentioned by the user|Files pasted by the user)\s*:/i;
 const IDE_REQUEST = /##\s*My request for Codex:\s*/i;
 
-/** Client-injected "user" rows: Hermes's retry notice after a dropped stream. */
-const CLIENT_INJECTED = [/^\[System:/];
+/**
+ * Harness blocks inside a user message (Claude Code): opened-file and
+ * selection context, background task notifications, pasted content, notes,
+ * reminders. Removed wherever they appear; any text left over is the user's.
+ */
+const HARNESS_BLOCK = /<(ide_opened_file|ide_selection|task-notification|pasted_content|note|system-reminder)\b[^>]*>[\s\S]*?<\/\1>/gi;
+
+/**
+ * Codex's notice after the user interrupts a turn, sent as a user message:
+ * "The user interrupted the previous turn on purpose. ... verify current
+ * state before retrying." Anything after the notice is kept.
+ */
+const INTERRUPT_NOTICE = /^The user interrupted the previous turn on purpose[\s\S]*?(before retrying\.?|$)/i;
+
+/** Whole messages that are not the user's voice. */
+const CLIENT_INJECTED = [
+  /^\[System:/,                                                   // Hermes retry after a dropped stream
+  /^(The attached )?pasted text( file\(s\))? contains? the user'?s request/i, // Codex: the real request is in an attachment
+  /graph community summaries with community IDs/i,                // graphify's scripted naming prompt run through Codex
+];
 
 /** Normalize one user message from any source; '' means "not the user's voice". */
 export function cleanUserText(raw: string): string {
@@ -83,6 +101,7 @@ export function cleanUserText(raw: string): string {
     const m = IDE_REQUEST.exec(t);
     t = m ? t.slice(m.index + m[0].length) : '';
   }
+  t = t.replace(HARNESS_BLOCK, ' ').replace(INTERRUPT_NOTICE, ' ');
   t = decodeEntities(t).trim();
   if (CLIENT_INJECTED.some(re => re.test(t))) return '';
   return t;
@@ -673,9 +692,10 @@ export function summarizeClusters(items: Array<{ sessionKey: string; source: Sou
  * harness smoke test): paired arms, condition copies, smoke dirs. Their
  * sessions are scripted prompts, not the user's voice. `memory` and
  * `baseline` match the run condition names (7 one-turn sessions each in the
- * first census); if you have a real project called that, use --include-eval.
+ * first census); author/b1/b2/final are the password-reset verifier trial.
+ * If you have a real project with one of these names, use --include-eval.
  */
-const EVAL_PROJECT = /^(arm-[a-z]-\d+|run-\d+-[a-z0-9-]+|amg-smoke-[a-z0-9]+|builder-[a-z]|baseline|memory|static-note|automatic-memory)$/;
+const EVAL_PROJECT = /^(arm-[a-z]-\d+|run-\d+-[a-z0-9-]+|amg-smoke-[a-z0-9]+|builder-[a-z]|baseline|memory|static-note|automatic-memory|author|b\d+|final)$/;
 
 export function isEvalProject(project: string): boolean {
   return project.startsWith('projects/') && EVAL_PROJECT.test(project.slice('projects/'.length));
@@ -727,21 +747,38 @@ export interface StandingInstructionReport {
   topRecurring: InstructionCluster[];
 }
 
-/** Recurring clauses across ALL user turns (not just pushback). Counted once per session per cluster. */
-export function standingInstructions(sessions: SessionTurns[]): StandingInstructionReport {
-  const items: Array<{ sessionKey: string; source: Source; project: string; text: string; words: string[] }> = [];
+export interface ClauseItem {
+  sessionKey: string;
+  source: Source;
+  sessionId: string;
+  project: string;
+  startedAt: number;
+  turnIndex: number;
+  text: string;
+  words: string[];
+}
+
+/** Every clause of every user turn short enough to be typed (not pasted), with its position. */
+export function instructionClauses(sessions: SessionTurns[]): { items: ClauseItem[]; scanned: number; pasted: number } {
+  const items: ClauseItem[] = [];
   let scanned = 0, pasted = 0;
   for (const s of sessions) {
-    for (const t of s.turns) {
-      if (t.role !== 'user') continue;
+    s.turns.forEach((t, turnIndex) => {
+      if (t.role !== 'user') return;
       scanned++;
-      if (t.text.length > MAX_INSTRUCTION_TURN_CHARS) { pasted++; continue; }
+      if (t.text.length > MAX_INSTRUCTION_TURN_CHARS) { pasted++; return; }
       for (const clause of splitClauses(t.text)) {
         const words = contentWords(clause);
-        if (words.length >= MIN_CLAUSE_CONTENT) items.push({ sessionKey: `${s.source}:${s.sessionId}`, source: s.source, project: s.project, text: clause, words });
+        if (words.length >= MIN_CLAUSE_CONTENT) items.push({ sessionKey: `${s.source}:${s.sessionId}`, source: s.source, sessionId: s.sessionId, project: s.project, startedAt: s.startedAt, turnIndex, text: clause, words });
       }
-    }
+    });
   }
+  return { items, scanned, pasted };
+}
+
+/** Recurring clauses across ALL user turns (not just pushback). Counted once per session per cluster. */
+export function standingInstructions(sessions: SessionTurns[]): StandingInstructionReport {
+  const { items, scanned, pasted } = instructionClauses(sessions);
   const clusterOf = clusterWordSets(items.map(i => i.words));
   const directiveOf = new Map<number, boolean>();
   items.forEach((it, k) => { if (isDirective(it.text)) directiveOf.set(clusterOf[k], true); });
